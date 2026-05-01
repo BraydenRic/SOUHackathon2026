@@ -210,6 +210,16 @@ Wrap stock list row components in React.memo since prices update frequently. Use
 
 ---
 
+## Code Documentation
+
+Every exported function, hook, component, and Zustand action must have a JSDoc comment describing what it does, its parameters, and its return value. Keep comments concise — one sentence per parameter is enough. Do not comment on things that are self-evident from the code or type signatures.
+
+Inside function bodies, only add inline comments when the logic is non-obvious: a subtle invariant, a workaround for a known API quirk, or a business rule that isn't derivable from the code itself. Do not narrate what the code does line by line.
+
+Every file should have a one-line header comment stating its responsibility (e.g. `// Polygon.io API client — price snapshots, history, and WebSocket feed`).
+
+---
+
 ## Security Notes
 
 Firestore rules are the only real server-side enforcement — deploy them before any users access the app. Always use the Firebase Auth UID as the Firestore document ID for user-scoped data. Validate all user inputs client-side before writing to Firestore. Add a comment in the coin award logic noting that in production coin balances should be computed server-side via Cloud Functions to prevent client manipulation.
