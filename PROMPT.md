@@ -99,6 +99,11 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false;
     }
+
+    match /prices/{doc} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }
 ```
