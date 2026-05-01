@@ -1,11 +1,13 @@
-// Cloud Run price service — streams Finnhub WebSocket trades into Firestore, with REST fallback on startup
+// Cloud Run price service — polls Finnhub REST API and writes prices to Firestore
 import * as admin from "firebase-admin";
-import WebSocket from "ws";
 import * as http from "http";
 import * as https from "https";
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY!;
 const PORT = process.env.PORT ?? "8080";
+const POLL_INTERVAL_MS = 60_000;
+// 1.2s between calls keeps 50 requests well under the 60/min free tier limit
+const CALL_DELAY_MS = 1_200;
 
 const SYMBOLS = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META", "JPM", "V", "JNJ",
@@ -20,67 +22,8 @@ interface PriceEntry {
   updatedAt: admin.firestore.Timestamp;
 }
 
-// Uses Application Default Credentials on Cloud Run automatically
 admin.initializeApp();
 const db = admin.firestore();
-
-// Accumulates the latest price per symbol between Firestore writes
-const priceBuffer: Record<string, number> = {};
-
-function connectFinnhub(): WebSocket {
-  const ws = new WebSocket(`wss://ws.finnhub.io?token=${FINNHUB_API_KEY}`);
-
-  ws.on("open", () => {
-    console.log("Finnhub WebSocket connected");
-    for (const symbol of SYMBOLS) {
-      ws.send(JSON.stringify({ type: "subscribe", symbol }));
-    }
-  });
-
-  ws.on("message", (raw: WebSocket.RawData) => {
-    try {
-      const msg = JSON.parse(raw.toString());
-      if (msg.type !== "trade" || !Array.isArray(msg.data)) return;
-      for (const trade of msg.data) {
-        if (trade.s && typeof trade.p === "number") {
-          priceBuffer[trade.s] = trade.p;
-        }
-      }
-    } catch {
-      // Ignore malformed messages
-    }
-  });
-
-  ws.on("close", () => {
-    console.warn("Finnhub WebSocket closed — reconnecting in 3s");
-    setTimeout(connectFinnhub, 3000);
-  });
-
-  ws.on("error", (err) => {
-    console.error("Finnhub WebSocket error:", err.message);
-    ws.close();
-  });
-
-  return ws;
-}
-
-async function flushToFirestore(): Promise<void> {
-  if (Object.keys(priceBuffer).length === 0) return;
-
-  const prices: Record<string, PriceEntry> = {};
-  for (const [symbol, price] of Object.entries(priceBuffer)) {
-    prices[symbol] = { price, updatedAt: admin.firestore.Timestamp.now() };
-  }
-
-  try {
-    await db.doc("prices/latest").set(
-      { prices, updatedAt: admin.firestore.Timestamp.now() },
-      { merge: true }
-    );
-  } catch (err) {
-    console.error("Firestore write failed:", err);
-  }
-}
 
 function fetchQuote(symbol: string): Promise<number | null> {
   return new Promise((resolve) => {
@@ -100,21 +43,31 @@ function fetchQuote(symbol: string): Promise<number | null> {
   });
 }
 
-// Fetches all 50 symbols via REST on startup so Firestore has data immediately,
-// even when the market is closed and no WebSocket trade events are coming in.
-async function seedPricesFromRest(): Promise<void> {
-  console.log("Seeding initial prices from Finnhub REST API...");
+async function pollAndFlush(): Promise<void> {
+  console.log("Polling Finnhub REST for all symbols...");
+  const prices: Record<string, PriceEntry> = {};
+
   for (const symbol of SYMBOLS) {
     const price = await fetchQuote(symbol);
-    if (price !== null) priceBuffer[symbol] = price;
-    // Stay well under the 60 calls/min free tier limit
-    await new Promise((r) => setTimeout(r, 1200));
+    if (price !== null) {
+      prices[symbol] = { price, updatedAt: admin.firestore.Timestamp.now() };
+    }
+    await new Promise((r) => setTimeout(r, CALL_DELAY_MS));
   }
-  await flushToFirestore();
-  console.log("Initial price seed complete");
+
+  if (Object.keys(prices).length === 0) return;
+
+  try {
+    await db.doc("prices/latest").set(
+      { prices, updatedAt: admin.firestore.Timestamp.now() },
+      { merge: true }
+    );
+    console.log(`Wrote ${Object.keys(prices).length} prices to Firestore`);
+  } catch (err) {
+    console.error("Firestore write failed:", err);
+  }
 }
 
-// Minimal HTTP server required by Cloud Run for health checks
 const server = http.createServer((_req, res) => {
   res.writeHead(200);
   res.end("ok");
@@ -122,8 +75,7 @@ const server = http.createServer((_req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Health check server listening on port ${PORT}`);
-  connectFinnhub();
-  seedPricesFromRest();
-  // Write batched prices to Firestore every 2 seconds
-  setInterval(flushToFirestore, 2000);
+  // Poll immediately on startup then every 60 seconds
+  pollAndFlush();
+  setInterval(pollAndFlush, POLL_INTERVAL_MS);
 });
