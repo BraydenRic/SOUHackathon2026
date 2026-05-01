@@ -12,13 +12,13 @@ StockDraft is a web app that gamifies stock market trading. It has two modes:
 
 ## Tech Stack
 
-Use Vite with React and TypeScript for the frontend. Style everything with Tailwind CSS. Use Recharts for all price charts. Use React Router v6 for client-side routing. Use Firebase for authentication (Google sign-in), the Firestore database, and hosting. Use Zustand for global client state. Use Polygon.io for real stock price data via both REST and WebSocket. Deploy to Firebase Hosting or Vercel.
+Use Vite with React and TypeScript for the frontend. Style everything with Tailwind CSS. Use Recharts for all price charts. Use React Router v6 for client-side routing. Use Firebase for authentication (Google sign-in), the Firestore database, and hosting. Use Zustand for global client state. Use Finnhub for real stock price data via WebSocket. Deploy to Firebase Hosting or Vercel.
 
 ---
 
 ## Environment Variables
 
-All sensitive keys live in a `.env` file at the project root. This file must be added to `.gitignore` and never committed. The required variables are the six Firebase config values (API key, auth domain, project ID, storage bucket, messaging sender ID, app ID) and the Polygon.io API key. All variables must be prefixed with `VITE_` so Vite exposes them to the client. Never hardcode any key anywhere in source files.
+All sensitive keys live in a `.env.local` file inside the `FantasyTrader` directory. This file must be added to `.gitignore` and never committed. A `.env.example` file is committed as a template. The required variables are the six Firebase config values (API key, auth domain, project ID, storage bucket, messaging sender ID, app ID) and the Finnhub API key. Frontend variables must be prefixed with `VITE_` so Vite exposes them to the client. The Finnhub API key is also used by the Cloud Run price service and should be set as an environment variable there. Never hardcode any key anywhere in source files.
 
 ---
 
@@ -107,13 +107,25 @@ service cloud.firestore {
 
 ## Stock Pool
 
-The curated pool of 20 stocks available in both sandbox and draft mode is: AAPL, MSFT, GOOGL, AMZN, TSLA, NVDA, META, JPM, V, JNJ, WMT, XOM, BAC, PFE, DIS, NFLX, AMD, UBER, COIN, SPOT. Each entry has a symbol, human-readable company name, and sector label. Define this as a constant in `lib/polygon.ts`.
+The curated pool of 50 stocks available in both sandbox and draft mode is: AAPL, MSFT, GOOGL, AMZN, TSLA, NVDA, META, JPM, V, JNJ, WMT, XOM, BAC, PFE, DIS, NFLX, AMD, UBER, COIN, SPOT, PYPL, SQ, SHOP, SNAP, TWLO, CRWD, DDOG, NET, ZS, PLTR, RBLX, HOOD, SOFI, LCID, RIVN, NIO, BABA, JD, PDD, MELI, SE, GRAB, ABNB, DASH, LYFT, SNOW, MDB, DKNG, PENN, CHWY. Each entry has a symbol, human-readable company name, and sector label. Define this as a constant in `lib/finnhub.ts`.
 
 ---
 
-## Polygon.io API Client
+## Price Architecture
 
-The Polygon client lives in `lib/polygon.ts` and exposes four things. A function to fetch a price snapshot for a single symbol returning current price, previous close, and change percent. A function to fetch snapshots for multiple symbols in one request. A function to fetch aggregate price history for a symbol given a date range and timespan (minute, hour, or day) used for drawing charts. A function to open a WebSocket connection to Polygon's stock feed, subscribe to trade events for a given list of symbols, and invoke a provided callback with the symbol and latest price on every trade tick — this function must return the socket instance so the caller can close it during cleanup. All functions must throw descriptive errors on failure and never swallow them silently.
+Stock prices are not fetched directly by the frontend. Instead a dedicated Cloud Run service handles all Finnhub communication and writes price data to Firestore. The frontend reads prices exclusively from Firestore via real-time listeners.
+
+### Cloud Run Price Service
+
+The price service lives in a separate `price-service/` directory at the repo root. It is a Node.js TypeScript service that does the following on startup: opens a single Finnhub WebSocket connection, subscribes to all 50 stocks in the pool, batches incoming trade events, and writes the entire prices map as a single Firestore document at `prices/latest` every 2 seconds. It also writes each stock's price history as a subcollection for chart data. The service must reconnect automatically if the WebSocket drops. Deploy it to Google Cloud Run with a minimum of 1 instance so it is always running. Set the Finnhub API key as a Cloud Run environment variable.
+
+### Finnhub Client (`lib/finnhub.ts`)
+
+The frontend Finnhub client is read-only and does not open WebSocket connections. It exposes a function to fetch REST price snapshots for a symbol (used as a fallback when Firestore data is stale) and a function to fetch aggregate price history for chart rendering. Define the 50-stock pool constant here. All functions must throw descriptive errors on failure.
+
+### Frontend Price Reading
+
+The frontend reads from Firestore document `prices/latest` via a real-time listener. The `useStockPrices` hook subscribes to this document and returns a prices map keyed by symbol. If the document has not been updated in more than 10 seconds, show a stale data indicator. No polling or WebSocket logic lives in the frontend.
 
 ---
 
@@ -145,7 +157,7 @@ The calculations file exposes a function to sum portfolio value from a positions
 
 ## Hooks
 
-The `useStockPrices` hook accepts a list of symbols, polls the Polygon snapshot endpoint every 30 seconds, and returns a prices map and a loading boolean. On a 429 response it backs off for 60 seconds before retrying. It clears the interval on unmount.
+The `useStockPrices` hook subscribes to the Firestore document `prices/latest` via a real-time listener and returns a prices map keyed by symbol and a loading boolean. It unsubscribes on unmount. If the document has not been updated in more than 10 seconds it sets a `isStale` flag in its return value.
 
 The `useRoom` hook accepts a room ID, subscribes to that room document via the game store, and returns the current room and a loading boolean. It unsubscribes on unmount.
 
@@ -171,7 +183,7 @@ Two options: create a room or join a room. Create lets the user pick a duration,
 Subscribe to the room on mount. Show a waiting screen until both players are present. Once both are present, render the snake draft interface with all 20 stocks in a grid. Picked stocks are dimmed and non-interactive. Clearly indicate whose turn it is. Show a 30-second countdown progress bar per pick. If the timer expires auto-select the stock with the highest current change percent from the remaining pool. Show each player's growing pick list side by side. After all 4 picks are made show a Start Game button visible only to the host. Clicking it sets the room to active and both players are redirected to the game page.
 
 ### Game
-Subscribe to the room on mount and redirect if the status is not active. Open a Polygon WebSocket for the 4 picked stocks and update live prices in the store on every tick. Close the socket on unmount. Show a live leaderboard with both players' gain percent in large type updating in real time with a clear winner indicator. Show each player's individual pick performance below. Show a countdown timer. A coin shop panel lets players spend coins on three power-ups: Insider Tip for 20 coins reveals which unpicked stock has the highest current gain, Freeze for 30 coins flags one opponent stock as frozen for 5 minutes with no mechanical effect beyond the visual flag, and Power Pick for 50 coins lets the user add one more stock from the remaining pool. Record power-up usage on the room document in Firestore. When the countdown hits zero compute the winner, call completeGame, award coins, and show a winner modal.
+Subscribe to the room on mount and redirect if the status is not active. Read live prices from Firestore via the useStockPrices hook and update the game store on every tick. Show a live leaderboard with both players' gain percent in large type updating in real time with a clear winner indicator. Show each player's individual pick performance below. Show a countdown timer. A coin shop panel lets players spend coins on three power-ups: Insider Tip for 20 coins reveals which unpicked stock has the highest current gain, Freeze for 30 coins flags one opponent stock as frozen for 5 minutes with no mechanical effect beyond the visual flag, and Power Pick for 50 coins lets the user add one more stock from the remaining pool. Record power-up usage on the room document in Firestore. When the countdown hits zero compute the winner, call completeGame, award coins, and show a winner modal.
 
 ### Profile
 Show the user's avatar, display name, and coin balance prominently. Show games played, games won, and win rate. Show a list of recent coin transactions with amount, reason, and timestamp.
@@ -240,4 +252,4 @@ Sign in with Google and land on sandbox. Show live prices loading and buy shares
 
 ## Stretch Goals
 
-Spectator mode with a shareable read-only link, a global all-time leaderboard sorted by coins, real stock headlines pulled from Polygon's news endpoint shown during the game, and a coin shop for spending coins on profile badges.
+Spectator mode with a shareable read-only link, a global all-time leaderboard sorted by coins, real stock headlines pulled from Finnhub's news endpoint shown during the game, and a coin shop for spending coins on profile badges.
