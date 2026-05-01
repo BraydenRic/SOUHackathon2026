@@ -1,7 +1,8 @@
-// Cloud Run price service — streams Finnhub WebSocket trades into Firestore
+// Cloud Run price service — streams Finnhub WebSocket trades into Firestore, with REST fallback on startup
 import * as admin from "firebase-admin";
 import WebSocket from "ws";
 import * as http from "http";
+import * as https from "https";
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY!;
 const PORT = process.env.PORT ?? "8080";
@@ -81,6 +82,38 @@ async function flushToFirestore(): Promise<void> {
   }
 }
 
+function fetchQuote(symbol: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+    https.get(url, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          resolve(typeof json.c === "number" && json.c > 0 ? json.c : null);
+        } catch {
+          resolve(null);
+        }
+      });
+    }).on("error", () => resolve(null));
+  });
+}
+
+// Fetches all 50 symbols via REST on startup so Firestore has data immediately,
+// even when the market is closed and no WebSocket trade events are coming in.
+async function seedPricesFromRest(): Promise<void> {
+  console.log("Seeding initial prices from Finnhub REST API...");
+  for (const symbol of SYMBOLS) {
+    const price = await fetchQuote(symbol);
+    if (price !== null) priceBuffer[symbol] = price;
+    // Stay well under the 60 calls/min free tier limit
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+  await flushToFirestore();
+  console.log("Initial price seed complete");
+}
+
 // Minimal HTTP server required by Cloud Run for health checks
 const server = http.createServer((_req, res) => {
   res.writeHead(200);
@@ -90,6 +123,7 @@ const server = http.createServer((_req, res) => {
 server.listen(PORT, () => {
   console.log(`Health check server listening on port ${PORT}`);
   connectFinnhub();
+  seedPricesFromRest();
   // Write batched prices to Firestore every 2 seconds
   setInterval(flushToFirestore, 2000);
 });
