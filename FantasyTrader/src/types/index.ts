@@ -57,6 +57,8 @@ export interface User {
   coins: number;
   gamesPlayed: number;
   gamesWon: number;
+  gamesLost: number;
+  gamesTied: number;
   createdAt: number;
 }
 
