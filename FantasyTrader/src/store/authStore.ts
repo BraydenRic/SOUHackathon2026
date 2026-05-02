@@ -7,7 +7,7 @@ import {
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment, collection, writeBatch } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../lib/firebase';
 import type { User } from '../types';
 
@@ -24,6 +24,10 @@ interface AuthState {
   signOutUser: () => Promise<void>;
   /** Re-fetch the user document from Firestore. */
   refreshUser: () => Promise<void>;
+  /** Buy a title for the first time — deducts coins, adds to purchasedTitles, and equips it. */
+  purchaseTitle: (titleId: string, cost: number, label: string) => Promise<void>;
+  /** Switch to an already-owned title (free). */
+  equipTitle: (titleId: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -46,7 +50,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: fbUser.email ?? '',
         displayName: fbUser.displayName ?? 'Player',
         photoURL: fbUser.photoURL ?? undefined,
-        coins: 100,
+        coins: 0,
         gamesPlayed: 0,
         gamesWon: 0,
         gamesLost: 0,
@@ -93,5 +97,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!firebaseUser || !db) return;
     const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
     if (snap.exists()) set({ user: { gamesLost: 0, gamesTied: 0, ...snap.data() } as User });
+  },
+
+  async purchaseTitle(titleId, cost, label) {
+    const { firebaseUser } = get();
+    if (!firebaseUser || !db) return;
+    const batch = writeBatch(db);
+    const userRef = doc(db, 'users', firebaseUser.uid);
+    // Deduct coins, add to owned list, equip immediately
+    batch.update(userRef, {
+      coins: increment(-cost),
+      purchasedTitles: arrayUnion(titleId),
+      title: titleId,
+    });
+    // Coin transaction for profile history
+    const txRef = doc(collection(db, 'coinTransactions'));
+    batch.set(txRef, {
+      id: txRef.id,
+      userId: firebaseUser.uid,
+      amount: -cost,
+      reason: `Purchased title: ${label}`,
+      timestamp: Date.now(),
+    });
+    await batch.commit();
+    await get().refreshUser();
+  },
+
+  async equipTitle(titleId) {
+    const { firebaseUser } = get();
+    if (!firebaseUser || !db) return;
+    await updateDoc(doc(db, 'users', firebaseUser.uid), { title: titleId });
+    await get().refreshUser();
   },
 }));
