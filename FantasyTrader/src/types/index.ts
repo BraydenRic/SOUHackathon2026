@@ -60,6 +60,8 @@ export interface User {
   gamesLost: number;
   gamesTied: number;
   createdAt: number;
+  title?: string;
+  purchasedTitles?: string[];
 }
 
 export interface DraftPick {
@@ -97,4 +99,12 @@ export interface GamePortfolio {
   currentValue: number;
   startValue: number;
   gainPercent: number;
+}
+
+export interface CoinTransaction {
+  id: string;
+  userId: string;
+  amount: number;
+  reason: string;
+  timestamp: number;
 }

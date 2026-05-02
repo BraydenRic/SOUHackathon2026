@@ -87,7 +87,7 @@ export default function GamePage() {
 
   const winner = room.winnerId;
   const isWinner = winner === user?.uid;
-  const isTie = !winner || (room.hostId === winner && room.guestId === winner);
+  const isTie = winner === null;
 
   function PickRow({ pick }: { pick: DraftPick }) {
     const current = prices[pick.symbol]?.price ?? pick.draftPrice;
