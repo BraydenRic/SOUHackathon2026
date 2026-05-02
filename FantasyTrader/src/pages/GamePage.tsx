@@ -21,6 +21,7 @@ export default function GamePage() {
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
   const { completeGame } = useGameStore();
+  const refreshUser = useAuthStore(s => s.refreshUser);
   const { room, loading } = useRoom(roomId ?? '');
   const { prices } = useStockPrices(SYMBOLS);
 
@@ -48,11 +49,14 @@ export default function GamePage() {
     if (Date.now() >= room.endTime) {
       completedRef.current = true;
       const winner = determineWinner(hostPicks, guestPicks, prices);
-      const winnerId = winner === 'host' ? room.hostId : winner === 'guest' ? (room.guestId ?? room.hostId) : room.hostId;
-      await completeGame(roomId, winnerId);
+      const winnerId = winner === 'tie' ? null : winner === 'host' ? room.hostId : (room.guestId ?? null);
+      if (room.hostId === user?.uid) {
+        await completeGame(roomId, winnerId, room.hostId, room.guestId, room.coinReward);
+      }
+      await refreshUser();
       setShowWinner(true);
     }
-  }, [room, roomId, hostPicks, guestPicks, prices, completeGame]);
+  }, [room, roomId, hostPicks, guestPicks, prices, completeGame, user, refreshUser]);
 
   useEffect(() => {
     if (!room?.endTime) return;
@@ -64,10 +68,13 @@ export default function GamePage() {
     return () => clearInterval(tick);
   }, [room?.endTime, checkEnd]);
 
-  // Show winner modal if room already completed (e.g. reloading the page)
+  // Show winner modal if room already completed (e.g. reloading the page); refresh guest stats
   useEffect(() => {
-    if (room?.status === 'completed') setShowWinner(true);
-  }, [room?.status]);
+    if (room?.status === 'completed') {
+      setShowWinner(true);
+      refreshUser();
+    }
+  }, [room?.status, refreshUser]);
 
   // Redirect if room isn't active yet
   useEffect(() => {

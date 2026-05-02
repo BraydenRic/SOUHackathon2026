@@ -12,7 +12,7 @@ const CALL_DELAY_MS = 1_200;
 const SYMBOLS = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META", "JPM", "V", "JNJ",
   "WMT", "XOM", "BAC", "PFE", "DIS", "NFLX", "AMD", "UBER", "COIN", "SPOT",
-  "PYPL", "SQ", "SHOP", "SNAP", "TWLO", "CRWD", "DDOG", "NET", "ZS", "PLTR",
+  "PYPL", "XYZ", "SHOP", "SNAP", "TWLO", "CRWD", "DDOG", "NET", "ZS", "PLTR",
   "RBLX", "HOOD", "SOFI", "LCID", "RIVN", "NIO", "BABA", "JD", "PDD", "MELI",
   "SE", "GRAB", "ABNB", "DASH", "LYFT", "SNOW", "MDB", "DKNG", "PENN", "CHWY",
 ];
