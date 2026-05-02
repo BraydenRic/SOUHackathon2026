@@ -68,7 +68,7 @@ export interface DraftPick {
 }
 
 export type RoomStatus = 'waiting' | 'drafting' | 'active' | 'completed';
-export type GameDuration = '1h' | '1d' | '1w';
+export type GameDuration = '1m' | '1h' | '1d' | '1w';
 
 export interface Room {
   id: string;

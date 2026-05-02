@@ -17,6 +17,7 @@ import { db } from '../lib/firebase';
 import type { Room, DraftPick, GameDuration } from '../types';
 
 const DURATION_MS: Record<GameDuration, number> = {
+  '1m': 60 * 1000,
   '1h': 60 * 60 * 1000,
   '1d': 24 * 60 * 60 * 1000,
   '1w': 7 * 24 * 60 * 60 * 1000,

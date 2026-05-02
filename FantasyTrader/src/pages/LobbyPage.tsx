@@ -13,7 +13,7 @@ import type { GameDuration, Room } from '../types';
 
 type LobbyMode = 'choose' | 'create' | 'join';
 
-const durationLabels: Record<GameDuration, string> = { '1h': '1 Hour', '1d': '1 Day', '1w': '1 Week' };
+const durationLabels: Record<GameDuration, string> = { '1m': '1 Min (test)', '1h': '1 Hour', '1d': '1 Day', '1w': '1 Week' };
 const ACTIVE_STATUSES = ['waiting', 'drafting', 'active'] as const;
 
 /** Lobby page — create a Firestore-backed room or join one by code. */
@@ -168,7 +168,7 @@ export default function LobbyPage() {
             </button>
             <h2 className="text-zinc-100 font-bold text-xl">Choose Duration</h2>
             <div className="flex gap-3">
-              {(['1h', '1d', '1w'] as GameDuration[]).map(d => (
+              {(['1m', '1h', '1d', '1w'] as GameDuration[]).map(d => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
