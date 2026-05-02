@@ -17,7 +17,7 @@ export default function LeaderboardPage() {
       const snap = await getDocs(
         query(collection(db, 'users'), orderBy('gamesWon', 'desc'), limit(50))
       );
-      setPlayers(snap.docs.map(d => d.data() as User));
+      setPlayers(snap.docs.map(d => d.data() as User).filter(p => p.gamesPlayed > 0));
       setLoading(false);
     }
     fetchLeaderboard();
