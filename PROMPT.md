@@ -1,8 +1,8 @@
-# StockDraft — Build Prompt
+# Fantasy Trader — Build Prompt
 
 ## What You're Building
 
-StockDraft is a web app that gamifies stock market trading. It has two modes:
+Fantasy Trader is a web app that gamifies stock market trading. It has two modes:
 
 **Sandbox Mode** is a solo learning environment. The user starts with $10,000 in fake cash and can buy and sell from a curated list of 50 real stocks using live price data from Finnhub. Their portfolio persists across sessions. The goal is to learn how trading works in a low-stakes, consequence-free environment.
 

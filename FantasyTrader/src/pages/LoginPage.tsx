@@ -21,7 +21,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-zinc-100 text-3xl font-bold mb-2">StockDraft</h1>
+          <h1 className="text-zinc-100 text-3xl font-bold mb-2">Fantasy Trader</h1>
           <p className="text-zinc-400">Trade smart. Draft smarter.</p>
         </div>
 

@@ -29,7 +29,7 @@ export function Navbar() {
           <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
           <polyline points="16 7 22 7 22 13" />
         </svg>
-        StockDraft
+        Fantasy Trader
       </Link>
 
       <div className="flex items-center gap-2">
@@ -37,9 +37,11 @@ export function Navbar() {
           <>
             <Link to="/sandbox" className={navLinkClass('/sandbox')}>Sandbox</Link>
             <Link to="/lobby" className={navLinkClass('/lobby')}>Lobby</Link>
+            <Link to="/history" className={navLinkClass('/history')}>History</Link>
+            <Link to="/leaderboard" className={navLinkClass('/leaderboard')}>Leaderboard</Link>
             <div className="flex items-center gap-2 ml-2 pl-2 border-l border-zinc-700">
               {user.photoURL && (
-                <img src={user.photoURL} alt={user.displayName} className="h-7 w-7 rounded-full" />
+                <img src={user.photoURL} alt={user.displayName} referrerPolicy="no-referrer" className="h-7 w-7 rounded-full" />
               )}
               <span className="text-zinc-300 text-sm hidden sm:block">{user.displayName}</span>
               <button

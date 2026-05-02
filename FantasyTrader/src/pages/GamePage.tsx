@@ -10,7 +10,7 @@ import { usePortfolio } from '../hooks/usePortfolio';
 import { useStockPrices } from '../hooks/useStockPrices';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { formatSignedPercent, formatCountdown } from '../utils/formatters';
-import { determineWinner } from '../utils/calculations';
+import { determineWinner, calcDraftPortfolioGain } from '../utils/calculations';
 import type { DraftPick } from '../types';
 
 const SYMBOLS = STOCK_POOL.map(s => s.symbol);
@@ -20,7 +20,7 @@ export default function GamePage() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
-  const { completeGame } = useGameStore();
+  const { completeGame, recordMyResult } = useGameStore();
   const refreshUser = useAuthStore(s => s.refreshUser);
   const { room, loading } = useRoom(roomId ?? '');
   const { prices } = useStockPrices(SYMBOLS);
@@ -28,6 +28,7 @@ export default function GamePage() {
   const [countdown, setCountdown] = useState('');
   const [showWinner, setShowWinner] = useState(false);
   const completedRef = useRef(false);
+  const recordedRef = useRef(false);
 
   const stockBySymbol = Object.fromEntries(STOCK_POOL.map(s => [s.symbol, s]));
 
@@ -48,15 +49,16 @@ export default function GamePage() {
     if (!room.endTime) return;
     if (Date.now() >= room.endTime) {
       completedRef.current = true;
-      const winner = determineWinner(hostPicks, guestPicks, prices);
-      const winnerId = winner === 'tie' ? null : winner === 'host' ? room.hostId : (room.guestId ?? null);
       if (room.hostId === user?.uid) {
-        await completeGame(roomId, winnerId, room.hostId, room.guestId, room.coinReward);
+        const winner = determineWinner(hostPicks, guestPicks, prices);
+        const winnerId = winner === 'tie' ? null : winner === 'host' ? room.hostId : (room.guestId ?? null);
+        const hostGain = calcDraftPortfolioGain(hostPicks, prices);
+        const guestGain = calcDraftPortfolioGain(guestPicks, prices);
+        await completeGame(roomId, winnerId, hostGain, guestGain);
       }
-      await refreshUser();
       setShowWinner(true);
     }
-  }, [room, roomId, hostPicks, guestPicks, prices, completeGame, user, refreshUser]);
+  }, [room, roomId, hostPicks, guestPicks, prices, completeGame, user]);
 
   useEffect(() => {
     if (!room?.endTime) return;
@@ -68,13 +70,13 @@ export default function GamePage() {
     return () => clearInterval(tick);
   }, [room?.endTime, checkEnd]);
 
-  // Show winner modal if room already completed (e.g. reloading the page); refresh guest stats
+  // When room reaches completed state, each player records their own result once
   useEffect(() => {
-    if (room?.status === 'completed') {
-      setShowWinner(true);
-      refreshUser();
-    }
-  }, [room?.status, refreshUser]);
+    if (room?.status !== 'completed' || !user || recordedRef.current) return;
+    recordedRef.current = true;
+    recordMyResult(user.uid, room.id, room.winnerId, room.coinReward).then(() => refreshUser());
+    setShowWinner(true);
+  }, [room?.status, room?.winnerId, room?.coinReward, user, recordMyResult, refreshUser]);
 
   // Redirect if room isn't active yet
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function GamePage() {
           <p className="text-zinc-500 text-xs">{stock?.name}</p>
         </div>
         <span className={`text-sm font-semibold ${gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          {formatSignedPercent(gain)}
+          {formatSignedPercent(gain, 4)}
         </span>
       </div>
     );
@@ -131,7 +133,7 @@ export default function GamePage() {
             >
               <p className={`text-sm font-medium mb-1 ${highlight ? 'text-emerald-400' : 'text-blue-400'}`}>{name}</p>
               <p className={`text-4xl font-mono font-bold ${stats.gainPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatSignedPercent(stats.gainPercent)}
+                {formatSignedPercent(stats.gainPercent, 4)}
               </p>
               <p className="text-zinc-500 text-xs mt-1">portfolio gain</p>
             </div>

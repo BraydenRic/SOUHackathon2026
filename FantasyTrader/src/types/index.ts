@@ -57,6 +57,8 @@ export interface User {
   coins: number;
   gamesPlayed: number;
   gamesWon: number;
+  gamesLost: number;
+  gamesTied: number;
   createdAt: number;
 }
 
@@ -68,7 +70,7 @@ export interface DraftPick {
 }
 
 export type RoomStatus = 'waiting' | 'drafting' | 'active' | 'completed';
-export type GameDuration = '1h' | '1d' | '1w';
+export type GameDuration = '1m' | '1h' | '1d' | '1w';
 
 export interface Room {
   id: string;
@@ -84,6 +86,8 @@ export interface Room {
   winnerId: string | null;
   coinReward: number;
   createdAt: number;
+  hostGainPercent?: number;
+  guestGainPercent?: number;
 }
 
 export interface GamePortfolio {

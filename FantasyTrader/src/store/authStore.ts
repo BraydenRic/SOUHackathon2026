@@ -49,6 +49,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         coins: 100,
         gamesPlayed: 0,
         gamesWon: 0,
+        gamesLost: 0,
+        gamesTied: 0,
         createdAt: Date.now(),
       };
       if (!db) { set({ user: fallback, loading: false }); return; }
@@ -59,7 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await setDoc(ref, fallback);
           set({ user: fallback, loading: false });
         } else {
-          set({ user: snap.data() as User, loading: false });
+          set({ user: { ...fallback, ...snap.data() } as User, loading: false });
         }
       } catch {
         // Firestore unavailable — still let the user in with auth data
@@ -90,6 +92,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { firebaseUser } = get();
     if (!firebaseUser || !db) return;
     const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (snap.exists()) set({ user: snap.data() as User });
+    if (snap.exists()) set({ user: { gamesLost: 0, gamesTied: 0, ...snap.data() } as User });
   },
 }));

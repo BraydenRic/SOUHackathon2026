@@ -17,6 +17,7 @@ import { db } from '../lib/firebase';
 import type { Room, DraftPick, GameDuration } from '../types';
 
 const DURATION_MS: Record<GameDuration, number> = {
+  '1m': 60 * 1000,
   '1h': 60 * 60 * 1000,
   '1d': 24 * 60 * 60 * 1000,
   '1w': 7 * 24 * 60 * 60 * 1000,
@@ -36,9 +37,13 @@ interface GameState {
   makeDraftPick: (roomId: string, pick: DraftPick) => Promise<void>;
   /** Set room to active and compute the end timestamp from its duration. */
   startGame: (roomId: string) => Promise<void>;
-  /** Set room to completed with a winner and update player stats. */
-  completeGame: (roomId: string, winnerId: string | null, hostId: string, guestId: string | null, coinReward: number) => Promise<void>;
+  /** Set room to completed with a winner. */
+  completeGame: (roomId: string, winnerId: string | null, hostGainPercent: number, guestGainPercent: number) => Promise<void>;
+  /** Update the calling player's own stats after a game completes. Each player calls this for themselves. */
+  recordMyResult: (userId: string, roomId: string, winnerId: string | null, coinReward: number) => Promise<void>;
 }
+
+const recordedRooms = new Set<string>();
 
 export const useGameStore = create<GameState>((set) => ({
   error: null,
@@ -105,21 +110,26 @@ export const useGameStore = create<GameState>((set) => ({
     });
   },
 
-  async completeGame(roomId, winnerId, hostId, guestId, coinReward) {
+  async completeGame(roomId, winnerId, hostGainPercent, guestGainPercent) {
     if (!db) return;
     await updateDoc(doc(db, 'rooms', roomId), {
       status: 'completed',
       winnerId,
+      hostGainPercent,
+      guestGainPercent,
     });
-    const playerIds = ([hostId, guestId] as (string | null)[]).filter(Boolean) as string[];
-    await Promise.all(playerIds.map(uid =>
-      updateDoc(doc(db!, 'users', uid), { gamesPlayed: increment(1) })
-    ));
-    if (winnerId) {
-      await updateDoc(doc(db, 'users', winnerId), {
-        gamesWon: increment(1),
-        coins: increment(coinReward),
-      });
-    }
+  },
+
+  async recordMyResult(userId, roomId, winnerId, coinReward) {
+    if (!db) return;
+    const key = `${userId}:${roomId}`;
+    if (recordedRooms.has(key)) return;
+    recordedRooms.add(key);
+    const outcome = winnerId === userId
+      ? { gamesWon: increment(1), coins: increment(coinReward) }
+      : winnerId === null
+        ? { gamesTied: increment(1) }
+        : { gamesLost: increment(1) };
+    await updateDoc(doc(db, 'users', userId), { gamesPlayed: increment(1), ...outcome });
   },
 }));
