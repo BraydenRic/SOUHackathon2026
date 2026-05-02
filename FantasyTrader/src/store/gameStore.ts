@@ -40,8 +40,11 @@ interface GameState {
   /** Set room to completed with a winner. */
   completeGame: (roomId: string, winnerId: string | null, hostGainPercent: number, guestGainPercent: number) => Promise<void>;
   /** Update the calling player's own stats after a game completes. Each player calls this for themselves. */
-  recordMyResult: (userId: string, winnerId: string | null, coinReward: number) => Promise<void>;
+  recordMyResult: (userId: string, roomId: string, winnerId: string | null, coinReward: number) => Promise<void>;
 }
+
+// Module-level set prevents double-recording if the component re-renders during async work
+const recordedRooms = new Set<string>();
 
 export const useGameStore = create<GameState>((set) => ({
   error: null,
@@ -118,8 +121,11 @@ export const useGameStore = create<GameState>((set) => ({
     });
   },
 
-  async recordMyResult(userId, winnerId, coinReward) {
+  async recordMyResult(userId, roomId, winnerId, coinReward) {
     if (!db) return;
+    const key = `${userId}:${roomId}`;
+    if (recordedRooms.has(key)) return;
+    recordedRooms.add(key);
     const isWinner = winnerId === userId;
     const isTie = winnerId === null;
     const outcome = isWinner

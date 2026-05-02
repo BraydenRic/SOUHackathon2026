@@ -74,7 +74,7 @@ export default function GamePage() {
   useEffect(() => {
     if (room?.status !== 'completed' || !user || recordedRef.current) return;
     recordedRef.current = true;
-    recordMyResult(user.uid, room.winnerId, room.coinReward).then(() => refreshUser());
+    recordMyResult(user.uid, room.id, room.winnerId, room.coinReward).then(() => refreshUser());
     setShowWinner(true);
   }, [room?.status, room?.winnerId, room?.coinReward, user, recordMyResult, refreshUser]);
 

@@ -34,7 +34,7 @@ export function Navbar() {
           <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
           <polyline points="16 7 22 7 22 13" />
         </svg>
-        StockDraft
+        Fantasy Trader
       </Link>
 
       <div className="flex items-center gap-2">
@@ -43,6 +43,8 @@ export function Navbar() {
             <Link to="/sandbox" className={navLinkClass('/sandbox')}>Sandbox</Link>
             <Link to="/lobby" className={navLinkClass('/lobby')}>Lobby</Link>
             <Link to="/history" className={navLinkClass('/history')}>History</Link>
+            <Link to="/leaderboard" className={navLinkClass('/leaderboard')}>Leaderboard</Link>
+
             {/* Coin balance */}
             <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1">
               <span className="text-sm select-none">🪙</span>
@@ -55,6 +57,7 @@ export function Navbar() {
                   <img
                     src={user.photoURL}
                     alt={user.displayName}
+                    referrerPolicy="no-referrer"
                     className="h-7 w-7 rounded-full object-cover"
                     onError={() => setPhotoFailed(true)}
                   />
