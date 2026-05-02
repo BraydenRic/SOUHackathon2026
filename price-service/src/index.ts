@@ -19,13 +19,15 @@ const SYMBOLS = [
 
 interface PriceEntry {
   price: number;
+  prevClose: number;
+  changePercent: number;
   updatedAt: admin.firestore.Timestamp;
 }
 
 admin.initializeApp();
 const db = admin.firestore();
 
-function fetchQuote(symbol: string): Promise<number | null> {
+function fetchQuote(symbol: string): Promise<{ price: number; prevClose: number; changePercent: number } | null> {
   return new Promise((resolve) => {
     const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
     https.get(url, (res) => {
@@ -34,7 +36,8 @@ function fetchQuote(symbol: string): Promise<number | null> {
       res.on("end", () => {
         try {
           const json = JSON.parse(data);
-          resolve(typeof json.c === "number" && json.c > 0 ? json.c : null);
+          if (typeof json.c !== "number" || json.c <= 0) { resolve(null); return; }
+          resolve({ price: json.c, prevClose: json.pc ?? 0, changePercent: json.dp ?? 0 });
         } catch {
           resolve(null);
         }
@@ -50,7 +53,7 @@ async function pollAndFlush(): Promise<void> {
   for (const symbol of SYMBOLS) {
     const price = await fetchQuote(symbol);
     if (price !== null) {
-      prices[symbol] = { price, updatedAt: admin.firestore.Timestamp.now() };
+      prices[symbol] = { ...price, updatedAt: admin.firestore.Timestamp.now() };
     }
     await new Promise((r) => setTimeout(r, CALL_DELAY_MS));
   }

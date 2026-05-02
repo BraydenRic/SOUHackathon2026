@@ -20,7 +20,7 @@ export function useStockPrices(symbols: string[]): { prices: PricesMap; loading:
       snapshot => {
         const data = snapshot.data();
         if (!data?.prices) return;
-        const raw = data.prices as Record<string, { price: number; updatedAt: Timestamp }>;
+        const raw = data.prices as Record<string, { price: number; prevClose: number; changePercent: number; updatedAt: Timestamp }>;
         setPrices(prev => {
           const next = { ...prev };
           for (const sym of symbols) {
@@ -29,8 +29,8 @@ export function useStockPrices(symbols: string[]): { prices: PricesMap; loading:
             next[sym] = {
               symbol: sym,
               price: entry.price,
-              prevClose: 0,
-              changePercent: 0,
+              prevClose: entry.prevClose ?? 0,
+              changePercent: entry.changePercent ?? 0,
               lastUpdated: entry.updatedAt instanceof Timestamp ? entry.updatedAt.toMillis() : Date.now(),
               stale: false,
             };
