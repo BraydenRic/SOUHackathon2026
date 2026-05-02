@@ -26,9 +26,12 @@ export default function LandingPage() {
     <AuroraBackground>
       <div className="min-h-screen flex flex-col w-full">
 
-        <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
-          Fantasy<span className="text-emerald-400"> Trader</span>
-        </h1>
+        {/* Hero */}
+        <main className="flex-1 flex flex-col items-center justify-center px-6 pt-20 pb-16 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-emerald-400 text-sm font-medium mb-8">
+            <span className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse" />
+            Live market data
+          </div>
 
           <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
             <span className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1">
