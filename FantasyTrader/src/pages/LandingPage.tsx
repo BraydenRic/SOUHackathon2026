@@ -2,9 +2,10 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import graphBg from '../assets/graph.betterer.jpg';
 
 interface FeatureCardProps {
-  icon: string;
+  icon?: string;
   title: string;
   description: string;
 }
@@ -22,7 +23,18 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
 /** Landing page with hero section and feature callouts. */
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        backgroundImage: `url(${graphBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/60 -z-10 fixed" />
+
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 pt-20 pb-16 text-center">
         <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-emerald-400 text-sm font-medium mb-8">
@@ -30,13 +42,17 @@ export default function LandingPage() {
           Live market data
         </div>
 
-        <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
-          Stock<span className="text-emerald-400">Draft</span>
-        </h1>
+       <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
+  <span className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1">
+    Stock<span className="text-emerald-400">Draft</span>
+  </span>
+</h1>
 
-        <p className="text-xl text-zinc-400 mb-10 max-w-md">
-          Trade smart. Draft smarter.
-        </p>
+<p className="text-xl text-white mb-10 max-w-md">
+  <span className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1">
+    Trade smart. Draft smarter.
+  </span>
+</p>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link to="/sandbox">
@@ -49,20 +65,20 @@ export default function LandingPage() {
       </main>
 
       {/* Feature callouts */}
-      <section className="px-6 pb-16 max-w-4xl mx-auto w-full">
+      <section className="pt-3 px-6 pb-6 max-w-4xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FeatureCard
-            icon="📈"
+            icon=""
             title="Sandbox Mode"
             description="Start with $10,000 in fake cash. Buy and sell from 20 real stocks using live price data. Learn how trading works with zero risk."
           />
           <FeatureCard
-            icon="⚡"
+            icon=""
             title="Draft Mode"
             description="Challenge a friend to a 1v1 snake draft. Pick stocks, set a time window, and see whose portfolio gains more. Winner takes the coins."
           />
           <FeatureCard
-            icon="🪙"
+            icon=""
             title="Coins & Power-Ups"
             description="Earn coins by winning drafts. Spend them on power-ups like Insider Tip, Freeze, and Power Pick to swing the game in your favor."
           />
