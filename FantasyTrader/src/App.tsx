@@ -10,6 +10,7 @@ import LobbyPage from './pages/LobbyPage';
 import DraftPage from './pages/DraftPage';
 import GamePage from './pages/GamePage';
 import HistoryPage from './pages/HistoryPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 export default function App() {
   const initialize = useAuthStore(s => s.initialize);
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/draft/:roomId" element={<ProtectedRoute><DraftPage /></ProtectedRoute>} />
         <Route path="/game/:roomId" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+        <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
