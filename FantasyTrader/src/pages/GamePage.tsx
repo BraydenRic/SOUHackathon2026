@@ -60,21 +60,25 @@ export default function GamePage() {
   }, [room, roomId, hostPicks, guestPicks, prices, completeGame, user]);
 
   useEffect(() => {
-    if (!room?.endTime) return;
+    // Stop ticking once the game is over — prevents checkEnd from re-showing the modal
+    if (!room?.endTime || room.status === 'completed') return;
     const tick = setInterval(() => {
       setCountdown(formatCountdown(room.endTime!));
       checkEnd();
     }, 1000);
     setCountdown(formatCountdown(room.endTime));
     return () => clearInterval(tick);
-  }, [room?.endTime, checkEnd]);
+  }, [room?.endTime, room?.status, checkEnd]);
 
+  // When room reaches completed state, each player records their own result once.
+  // Deps intentionally limited to room.status — user updates from refreshUser must not re-trigger this.
   useEffect(() => {
     if (room?.status !== 'completed' || !user || recordedRef.current) return;
     recordedRef.current = true;
     recordMyResult(user.uid, room.id, room.winnerId, room.coinReward).then(() => refreshUser());
     setShowWinner(true);
-  }, [room?.status, room?.winnerId, room?.coinReward, user, recordMyResult, refreshUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.status]);
 
   useEffect(() => {
     if (!loading && room && room.status === 'waiting') navigate('/lobby');
