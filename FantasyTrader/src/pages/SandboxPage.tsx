@@ -35,13 +35,11 @@ export default function SandboxPage() {
 
   const { prices, loading: pricesLoading } = useStockPrices(ALL_SYMBOLS);
 
-  // Load portfolio from Firestore on mount
   useEffect(() => {
     if (user) loadFromFirestore(user.uid);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
-  // Sync live prices into positions
   useEffect(() => {
     if (!pricesLoading) updatePrices(prices);
   }, [prices, pricesLoading, updatePrices]);
@@ -70,10 +68,10 @@ export default function SandboxPage() {
 
   const selectedStock = STOCK_POOL.find(s => s.symbol === selectedSymbol);
 
-  if (loading) return <div className="pt-14 min-h-screen bg-zinc-950 flex items-center justify-center"><div className="text-zinc-400">Loading portfolio…</div></div>;
+  if (loading) return <div className="pt-20 min-h-screen bg-zinc-950 flex items-center justify-center"><div className="text-zinc-400">Loading portfolio…</div></div>;
 
   return (
-    <div className="pt-14 min-h-screen bg-zinc-950">
+    <div className="pt-20 min-h-screen bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
