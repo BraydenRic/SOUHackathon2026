@@ -26,7 +26,7 @@ export default function LeaderboardPage() {
   if (loading) return <LoadingSpinner fullScreen />;
 
   return (
-    <div className="pt-14 min-h-screen bg-zinc-950 px-4 py-6">
+    <div className="pt-20 min-h-screen bg-zinc-950 px-4 pb-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-zinc-100 text-2xl font-bold">Leaderboard</h1>
 

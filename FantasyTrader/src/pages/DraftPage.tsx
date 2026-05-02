@@ -12,10 +12,8 @@ import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import type { DraftPick } from '../types';
 
-// Snake draft order: Host(0), Guest(1), Guest(1), Host(0), Host(0), Guest(1), Guest(1), Host(0)
 const DRAFT_ORDER = [0, 1, 1, 0, 0, 1, 1, 0];
 const COUNTDOWN_SECONDS = 30;
-
 const SYMBOLS = STOCK_POOL.map(s => s.symbol);
 
 /** Firestore-backed snake draft with 30s auto-pick countdown. */
@@ -33,7 +31,6 @@ export default function DraftPage() {
   const autoPickedRef = useRef(false);
 
   const isHost = room?.hostId === user?.uid;
-  // Player index: 0 = host, 1 = guest
   const playerIndex = isHost ? 0 : 1;
 
   const pickedSymbols = new Set(room?.picks.map(p => p.symbol) ?? []);
@@ -43,20 +40,17 @@ export default function DraftPage() {
   const currentPlayerIndex = DRAFT_ORDER[room?.currentTurn ?? 0] ?? 0;
   const isMyTurn = !draftComplete && currentPlayerIndex === playerIndex;
 
-  // Redirect to game page once host starts the game
   useEffect(() => {
     if (room?.status === 'active' && roomId) {
       navigate(`/game/${roomId}`);
     }
   }, [room?.status, roomId, navigate]);
 
-  // Reset countdown whenever the turn advances
   useEffect(() => {
     setCountdown(COUNTDOWN_SECONDS);
     autoPickedRef.current = false;
   }, [room?.currentTurn]);
 
-  // Countdown ticker + auto-pick on expiry (only fires on your turn)
   useEffect(() => {
     if (draftComplete || !isMyTurn) return;
     if (countdownRef.current) clearInterval(countdownRef.current);
@@ -65,7 +59,6 @@ export default function DraftPage() {
         if (prev <= 1) {
           if (!autoPickedRef.current && available.length > 0) {
             autoPickedRef.current = true;
-            // Auto-pick the stock with the best change% (or first available as fallback)
             const best = available.reduce((a, b) => {
               const aChg = prices[a.symbol]?.changePercent ?? 0;
               const bChg = prices[b.symbol]?.changePercent ?? 0;
@@ -98,7 +91,6 @@ export default function DraftPage() {
     if (!roomId) return;
     setStartingGame(true);
     await startGame(roomId);
-    // navigation happens via useEffect watching room.status
   }
 
   const countdownPct = (countdown / COUNTDOWN_SECONDS) * 100;
@@ -112,10 +104,9 @@ export default function DraftPage() {
 
   if (loading || !room) return <LoadingSpinner fullScreen />;
 
-  // Waiting for second player
   if (room.status === 'waiting') {
     return (
-      <div className="pt-14 min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="pt-20 min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="flex items-center gap-2 justify-center text-zinc-400">
             <span className="h-2 w-2 bg-amber-400 rounded-full animate-pulse" />
@@ -128,7 +119,7 @@ export default function DraftPage() {
   }
 
   return (
-    <div className="pt-14 min-h-screen bg-zinc-950 px-4 py-6">
+    <div className="pt-20 min-h-screen bg-zinc-950 px-4 py-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -149,7 +140,6 @@ export default function DraftPage() {
           )}
         </div>
 
-        {/* Countdown bar */}
         {!draftComplete && isMyTurn && (
           <div className="h-1.5 bg-zinc-800 rounded-full mb-6 overflow-hidden">
             <div
@@ -172,7 +162,6 @@ export default function DraftPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Stock grid */}
           <div className="lg:col-span-2">
             <h2 className="text-zinc-400 text-xs uppercase tracking-wide mb-3">Available Stocks</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -208,7 +197,6 @@ export default function DraftPage() {
             </div>
           </div>
 
-          {/* Pick lists */}
           <div className="space-y-4">
             {[
               { name: hostName, picks: hostPicks, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
@@ -233,7 +221,6 @@ export default function DraftPage() {
               </div>
             ))}
 
-            {/* Pick order indicator */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
               <h3 className="text-zinc-400 text-xs uppercase tracking-wide mb-2">Pick Order</h3>
               <div className="flex flex-wrap gap-1">

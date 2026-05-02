@@ -117,7 +117,7 @@ export default function LobbyPage() {
                 onClick={() => setMode('create')}
                 className="bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 hover:bg-zinc-800/60 rounded-2xl p-8 text-left transition-all cursor-pointer group"
               >
-                <div className="text-4xl mb-4">🏠</div>
+                <div className="text-4xl mb-4"></div>
                 <h2 className="text-zinc-100 font-bold text-xl mb-2 group-hover:text-emerald-400 transition-colors">Create a Room</h2>
                 <p className="text-zinc-400 text-sm">Set a duration, get a room code, and wait for a friend to join.</p>
               </button>
@@ -126,7 +126,7 @@ export default function LobbyPage() {
                 onClick={() => setMode('join')}
                 className="bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 hover:bg-zinc-800/60 rounded-2xl p-8 text-left transition-all cursor-pointer group"
               >
-                <div className="text-4xl mb-4">🚪</div>
+                <div className="text-4xl mb-4"></div>
                 <h2 className="text-zinc-100 font-bold text-xl mb-2 group-hover:text-emerald-400 transition-colors">Join a Room</h2>
                 <p className="text-zinc-400 text-sm">Enter a room code from your friend to jump into their draft.</p>
               </button>
