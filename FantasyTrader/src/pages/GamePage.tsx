@@ -10,7 +10,7 @@ import { usePortfolio } from '../hooks/usePortfolio';
 import { useStockPrices } from '../hooks/useStockPrices';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { formatSignedPercent, formatCountdown } from '../utils/formatters';
-import { determineWinner } from '../utils/calculations';
+import { determineWinner, calcDraftPortfolioGain } from '../utils/calculations';
 import type { DraftPick } from '../types';
 
 const SYMBOLS = STOCK_POOL.map(s => s.symbol);
@@ -51,7 +51,9 @@ export default function GamePage() {
       const winner = determineWinner(hostPicks, guestPicks, prices);
       const winnerId = winner === 'tie' ? null : winner === 'host' ? room.hostId : (room.guestId ?? null);
       if (room.hostId === user?.uid) {
-        await completeGame(roomId, winnerId, room.hostId, room.guestId, room.coinReward);
+        const hostGain = calcDraftPortfolioGain(hostPicks, prices);
+        const guestGain = calcDraftPortfolioGain(guestPicks, prices);
+        await completeGame(roomId, winnerId, room.hostId, room.guestId, room.coinReward, hostGain, guestGain);
       }
       await refreshUser();
       setShowWinner(true);
@@ -98,7 +100,7 @@ export default function GamePage() {
           <p className="text-zinc-500 text-xs">{stock?.name}</p>
         </div>
         <span className={`text-sm font-semibold ${gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          {formatSignedPercent(gain)}
+          {formatSignedPercent(gain, 4)}
         </span>
       </div>
     );
@@ -131,7 +133,7 @@ export default function GamePage() {
             >
               <p className={`text-sm font-medium mb-1 ${highlight ? 'text-emerald-400' : 'text-blue-400'}`}>{name}</p>
               <p className={`text-4xl font-mono font-bold ${stats.gainPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatSignedPercent(stats.gainPercent)}
+                {formatSignedPercent(stats.gainPercent, 4)}
               </p>
               <p className="text-zinc-500 text-xs mt-1">portfolio gain</p>
             </div>

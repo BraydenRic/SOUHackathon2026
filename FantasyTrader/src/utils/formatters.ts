@@ -8,8 +8,8 @@ export function formatUSD(value: number): string {
 }
 
 /** Formats a percent with explicit + prefix for positive values, e.g. +2.34% or -1.20% */
-export function formatSignedPercent(value: number): string {
-  const fixed = value.toFixed(2);
+export function formatSignedPercent(value: number, decimals = 2): string {
+  const fixed = value.toFixed(decimals);
   return value >= 0 ? `+${fixed}%` : `${fixed}%`;
 }
 

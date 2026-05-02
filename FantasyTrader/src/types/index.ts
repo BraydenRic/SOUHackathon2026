@@ -84,6 +84,8 @@ export interface Room {
   winnerId: string | null;
   coinReward: number;
   createdAt: number;
+  hostGainPercent?: number;
+  guestGainPercent?: number;
 }
 
 export interface GamePortfolio {

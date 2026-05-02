@@ -37,7 +37,7 @@ interface GameState {
   /** Set room to active and compute the end timestamp from its duration. */
   startGame: (roomId: string) => Promise<void>;
   /** Set room to completed with a winner and update player stats. */
-  completeGame: (roomId: string, winnerId: string | null, hostId: string, guestId: string | null, coinReward: number) => Promise<void>;
+  completeGame: (roomId: string, winnerId: string | null, hostId: string, guestId: string | null, coinReward: number, hostGainPercent: number, guestGainPercent: number) => Promise<void>;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -105,11 +105,13 @@ export const useGameStore = create<GameState>((set) => ({
     });
   },
 
-  async completeGame(roomId, winnerId, hostId, guestId, coinReward) {
+  async completeGame(roomId, winnerId, hostId, guestId, coinReward, hostGainPercent, guestGainPercent) {
     if (!db) return;
     await updateDoc(doc(db, 'rooms', roomId), {
       status: 'completed',
       winnerId,
+      hostGainPercent,
+      guestGainPercent,
     });
     const playerIds = ([hostId, guestId] as (string | null)[]).filter(Boolean) as string[];
     await Promise.all(playerIds.map(uid =>

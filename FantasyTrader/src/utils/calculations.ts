@@ -34,12 +34,16 @@ export function calcReturnPercent(positions: PositionsMap, prices: PricesMap): n
  */
 export function calcDraftPortfolioGain(picks: DraftPick[], prices: PricesMap): number {
   if (picks.length === 0) return 0;
-  const total = picks.reduce((sum, pick) => {
+  let total = 0;
+  let count = 0;
+  for (const pick of picks) {
     const current = prices[pick.symbol]?.price;
-    if (!current || pick.draftPrice === 0) return sum;
-    return sum + (current - pick.draftPrice) / pick.draftPrice;
-  }, 0);
-  return (total / picks.length) * 100;
+    if (!current || pick.draftPrice === 0) continue;
+    total += (current - pick.draftPrice) / pick.draftPrice;
+    count++;
+  }
+  if (count === 0) return 0;
+  return (total / count) * 100;
 }
 
 /**
