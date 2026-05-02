@@ -44,7 +44,7 @@ export default function LandingPage() {
 
        <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
   <span className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1">
-    Stock<span className="text-emerald-400">Draft</span>
+    Fantasy<span className="text-emerald-400">Trader</span>
   </span>
 </h1>
 
