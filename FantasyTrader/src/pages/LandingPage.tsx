@@ -31,7 +31,7 @@ export default function LandingPage() {
         </div>
 
         <h1 className="text-6xl font-bold tracking-tight text-zinc-100 mb-4">
-          Stock<span className="text-emerald-400">Draft</span>
+          Fantasy<span className="text-emerald-400"> Trader</span>
         </h1>
 
         <p className="text-xl text-zinc-400 mb-10 max-w-md">
