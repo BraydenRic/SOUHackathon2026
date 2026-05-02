@@ -138,29 +138,30 @@ body {
     @apply font-sans;
   }
 }
-@keyframes aurora {
+@keyframes aurora-blob {
   0% {
-    background-position: 0% 50%;
-    transform: translateX(-20%) skewX(-3deg);
+    transform: translateX(-10%) translateY(-50%) scaleY(1);
   }
-  25% {
-    background-position: 25% 30%;
-    transform: translateX(0%) skewX(2deg);
+  15% {
+    transform: translateX(30%) translateY(calc(-50% - 15%)) scaleY(1.15);
   }
-  50% {
-    background-position: 50% 70%;
-    transform: translateX(20%) skewX(-2deg);
+  30% {
+    transform: translateX(70%) translateY(calc(-50% + 10%)) scaleY(0.88);
+  }
+  45% {
+    transform: translateX(110%) translateY(calc(-50% - 20%)) scaleY(1.2);
+  }
+  60% {
+    transform: translateX(150%) translateY(calc(-50% + 8%)) scaleY(0.9);
   }
   75% {
-    background-position: 75% 30%;
-    transform: translateX(10%) skewX(3deg);
+    transform: translateX(190%) translateY(calc(-50% - 12%)) scaleY(1.1);
   }
   100% {
-    background-position: 0% 50%;
-    transform: translateX(-20%) skewX(-3deg);
+    transform: translateX(250%) translateY(-50%) scaleY(1);
   }
 }
 
-.animate-aurora {
-  animation: aurora 10s ease-in-out infinite;
+.animate-aurora-blob {
+  animation: aurora-blob linear infinite;
 }

@@ -7,6 +7,19 @@ interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   showRadialGradient?: boolean;
 }
 
+const blobs = [
+  { color: "#7c3aed", size: "20% 35%", top: "55%", delay: "0s",   duration: "14s" },
+  { color: "#059669", size: "15% 50%", top: "25%", delay: "-3s",  duration: "17s" },
+  { color: "#0ea5e9", size: "22% 30%", top: "70%", delay: "-6s",  duration: "12s" },
+  { color: "#10b981", size: "18% 55%", top: "35%", delay: "-9s",  duration: "19s" },
+  { color: "#4f46e5", size: "20% 28%", top: "65%", delay: "-2s",  duration: "15s" },
+  { color: "#34d399", size: "25% 45%", top: "20%", delay: "-11s", duration: "11s" },
+  { color: "#7c3aed", size: "16% 52%", top: "60%", delay: "-5s",  duration: "18s" },
+  { color: "#0ea5e9", size: "22% 33%", top: "30%", delay: "-8s",  duration: "13s" },
+  { color: "#059669", size: "18% 48%", top: "75%", delay: "-1s",  duration: "16s" },
+  { color: "#4f46e5", size: "20% 38%", top: "40%", delay: "-13s", duration: "20s" },
+];
+
 export const AuroraBackground = ({
   className,
   children,
@@ -22,30 +35,23 @@ export const AuroraBackground = ({
         )}
         {...props}
       >
-        <div
-          className="absolute inset-0 overflow-hidden"
-          style={
-            {
-              "--aurora":
-                "radial-gradient(ellipse at 20% 50%, #059669 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, #064e3b 0%, transparent 55%), radial-gradient(ellipse at 60% 80%, #10b981 0%, transparent 50%), radial-gradient(ellipse at 40% 30%, #047857 0%, transparent 45%)",
-              "--dark-gradient":
-                "radial-gradient(ellipse at 50% 50%, transparent 0%, #000 70%)",
-            } as React.CSSProperties
-          }
-        >
-          <div
-            className={cn(
-              "animate-aurora pointer-events-none absolute -inset-[10px] opacity-70 blur-[20px] filter will-change-transform",
-              showRadialGradient &&
-                "[mask-image:radial-gradient(ellipse_at_50%_50%,black_30%,transparent_80%)]",
-            )}
-           style={{
-              backgroundImage:
-                "radial-gradient(ellipse at 10% 40%, #7c3aed 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, #059669 0%, transparent 50%), radial-gradient(ellipse at 60% 30%, #0ea5e9 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, #10b981 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, #4f46e5 0%, transparent 45%), radial-gradient(ellipse at 90% 10%, #34d399 0%, transparent 45%)",
-                 backgroundSize: "600% 300%",
-                 backgroundPosition: "0% 50%",
+        <div className="absolute inset-0 overflow-hidden">
+          {blobs.map((blob, i) => (
+            <div
+              key={i}
+              className="animate-aurora-blob pointer-events-none absolute blur-[40px] opacity-60 will-change-transform"
+              style={{
+                width: "40%",
+                height: blob.size.split(" ")[1],
+                top: blob.top,
+                left: "-40%",
+                transform: "translateY(-50%)",
+                background: `radial-gradient(ellipse ${blob.size}, ${blob.color} 0%, transparent 100%)`,
+                animationDuration: blob.duration,
+                animationDelay: blob.delay,
               }}
-          ></div>
+            />
+          ))}
         </div>
         {children}
       </div>
