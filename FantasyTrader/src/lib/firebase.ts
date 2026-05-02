@@ -1,7 +1,8 @@
-// Firebase app + Firestore — only initializes when env vars are present
+// Firebase app + Firestore + Auth — only initializes when env vars are present
 
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,10 +15,13 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
+let auth: Auth | null = null;
+const googleProvider = new GoogleAuthProvider();
 
 if (firebaseConfig.projectId) {
   app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   db = getFirestore(app);
+  auth = getAuth(app);
 }
 
-export { db };
+export { db, auth, googleProvider };

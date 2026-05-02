@@ -1,10 +1,13 @@
-// Fixed top navigation bar
+// Fixed top navigation bar — auth-aware
 
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 
-/** Fixed top navbar with app logo and page links. */
+/** Fixed top navbar with logo, page links, and auth state. */
 export function Navbar() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, signOutUser } = useAuthStore();
 
   function navLinkClass(path: string) {
     return `text-sm transition-colors px-3 py-1.5 rounded-lg ${
@@ -12,6 +15,11 @@ export function Navbar() {
         ? 'text-emerald-400 bg-emerald-500/10'
         : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
     }`;
+  }
+
+  async function handleSignOut() {
+    await signOutUser();
+    navigate('/login');
   }
 
   return (
@@ -24,9 +32,29 @@ export function Navbar() {
         StockDraft
       </Link>
 
-      <div className="flex items-center gap-1">
-        <Link to="/sandbox" className={navLinkClass('/sandbox')}>Sandbox</Link>
-        <Link to="/lobby" className={navLinkClass('/lobby')}>Lobby</Link>
+      <div className="flex items-center gap-2">
+        {user ? (
+          <>
+            <Link to="/sandbox" className={navLinkClass('/sandbox')}>Sandbox</Link>
+            <Link to="/lobby" className={navLinkClass('/lobby')}>Lobby</Link>
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-zinc-700">
+              {user.photoURL && (
+                <img src={user.photoURL} alt={user.displayName} className="h-7 w-7 rounded-full" />
+              )}
+              <span className="text-zinc-300 text-sm hidden sm:block">{user.displayName}</span>
+              <button
+                onClick={handleSignOut}
+                className="text-zinc-400 hover:text-zinc-100 text-sm px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                Sign out
+              </button>
+            </div>
+          </>
+        ) : (
+          <Link to="/login" className="text-sm text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg hover:bg-emerald-500/10 transition-colors">
+            Sign in
+          </Link>
+        )}
       </div>
     </nav>
   );
