@@ -48,3 +48,49 @@ export interface SandboxState {
   positions: PositionsMap;
   transactions: Transaction[];
 }
+
+export interface User {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  coins: number;
+  gamesPlayed: number;
+  gamesWon: number;
+  createdAt: number;
+}
+
+export interface DraftPick {
+  userId: string;
+  symbol: string;
+  pickNumber: number;
+  draftPrice: number;
+}
+
+export type RoomStatus = 'waiting' | 'drafting' | 'active' | 'completed';
+export type GameDuration = '1h' | '1d' | '1w';
+
+export interface Room {
+  id: string;
+  code: string;
+  hostId: string;
+  guestId: string | null;
+  status: RoomStatus;
+  duration: GameDuration;
+  startTime: number | null;
+  endTime: number | null;
+  currentTurn: number;
+  picks: DraftPick[];
+  winnerId: string | null;
+  coinReward: number;
+  createdAt: number;
+}
+
+export interface GamePortfolio {
+  userId: string;
+  roomId: string;
+  picks: DraftPick[];
+  currentValue: number;
+  startValue: number;
+  gainPercent: number;
+}

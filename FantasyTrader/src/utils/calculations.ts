@@ -1,6 +1,6 @@
 // Pure business logic calculations — no side effects, no React imports
 
-import type { PositionsMap, PricesMap } from '../types';
+import type { PositionsMap, PricesMap, DraftPick } from '../types';
 
 /** Sums the current market value of all positions */
 export function calcPortfolioValue(positions: PositionsMap, prices: PricesMap): number {
@@ -26,4 +26,34 @@ export function calcReturnPercent(positions: PositionsMap, prices: PricesMap): n
   }
   if (totalCost === 0) return 0;
   return ((totalValue - totalCost) / totalCost) * 100;
+}
+
+/**
+ * Computes average gain percent across a set of draft picks vs their draft-time price.
+ * Each pick is weighted equally (not by notional value).
+ */
+export function calcDraftPortfolioGain(picks: DraftPick[], prices: PricesMap): number {
+  if (picks.length === 0) return 0;
+  const total = picks.reduce((sum, pick) => {
+    const current = prices[pick.symbol]?.price;
+    if (!current || pick.draftPrice === 0) return sum;
+    return sum + (current - pick.draftPrice) / pick.draftPrice;
+  }, 0);
+  return (total / picks.length) * 100;
+}
+
+/**
+ * Determines the winner of a game given each player's picks and current prices.
+ * Returns 'host', 'guest', or 'tie'.
+ */
+export function determineWinner(
+  hostPicks: DraftPick[],
+  guestPicks: DraftPick[],
+  prices: PricesMap,
+): 'host' | 'guest' | 'tie' {
+  const hostGain = calcDraftPortfolioGain(hostPicks, prices);
+  const guestGain = calcDraftPortfolioGain(guestPicks, prices);
+  if (hostGain > guestGain) return 'host';
+  if (guestGain > hostGain) return 'guest';
+  return 'tie';
 }

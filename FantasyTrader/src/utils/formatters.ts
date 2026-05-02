@@ -13,3 +13,16 @@ export function formatSignedPercent(value: number): string {
   return value >= 0 ? `+${fixed}%` : `${fixed}%`;
 }
 
+/** Formats a future timestamp as a countdown string, e.g. "2h 34m 12s". Returns "Ended" if past. */
+export function formatCountdown(endMs: number): string {
+  const remaining = endMs - Date.now();
+  if (remaining <= 0) return 'Ended';
+  const totalSec = Math.floor(remaining / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
