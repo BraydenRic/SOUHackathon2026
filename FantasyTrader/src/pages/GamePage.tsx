@@ -42,7 +42,6 @@ export default function GamePage() {
   const myName = user?.displayName ?? 'You';
   const opponentName = isHost ? 'Opponent' : 'Opponent';
 
-  // Countdown ticker and game completion check
   const checkEnd = useCallback(async () => {
     if (!room || !roomId || completedRef.current) return;
     if (room.status === 'completed') { setShowWinner(true); return; }
@@ -70,7 +69,6 @@ export default function GamePage() {
     return () => clearInterval(tick);
   }, [room?.endTime, checkEnd]);
 
-  // When room reaches completed state, each player records their own result once
   useEffect(() => {
     if (room?.status !== 'completed' || !user || recordedRef.current) return;
     recordedRef.current = true;
@@ -78,7 +76,6 @@ export default function GamePage() {
     setShowWinner(true);
   }, [room?.status, room?.winnerId, room?.coinReward, user, recordMyResult, refreshUser]);
 
-  // Redirect if room isn't active yet
   useEffect(() => {
     if (!loading && room && room.status === 'waiting') navigate('/lobby');
   }, [loading, room, navigate]);
@@ -107,7 +104,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="pt-14 min-h-screen bg-zinc-950 px-4 py-6">
+    <div className="pt-20 min-h-screen bg-zinc-950 px-4 pb-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
