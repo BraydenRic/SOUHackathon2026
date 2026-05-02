@@ -3,6 +3,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuthStore } from '../store/authStore';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { TitleBadge } from '../components/ui/TitleBadge';
 import type { User } from '../types';
 
 export default function LeaderboardPage() {
@@ -66,7 +67,7 @@ export default function LeaderboardPage() {
                     {i + 1}
                   </span>
 
-                  {/* Avatar + name */}
+                  {/* Avatar + name + title */}
                   <div className="flex items-center gap-2.5 min-w-0">
                     {player.photoURL ? (
                       <img src={player.photoURL} alt={player.displayName} referrerPolicy="no-referrer" className="h-7 w-7 rounded-full flex-shrink-0" />
@@ -75,10 +76,13 @@ export default function LeaderboardPage() {
                         {initial}
                       </div>
                     )}
-                    <span className={`text-sm font-medium truncate ${isMe ? 'text-emerald-300' : 'text-zinc-200'}`}>
-                      {player.displayName}
-                      {isMe && <span className="ml-1.5 text-xs text-emerald-500 font-normal">you</span>}
-                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-sm font-medium truncate ${isMe ? 'text-emerald-300' : 'text-zinc-200'}`}>
+                        {player.displayName}
+                        {isMe && <span className="ml-1.5 text-xs text-emerald-500 font-normal">you</span>}
+                      </span>
+                      {player.title && <TitleBadge titleId={player.title} size="sm" />}
+                    </div>
                   </div>
 
                   {/* Wins */}
