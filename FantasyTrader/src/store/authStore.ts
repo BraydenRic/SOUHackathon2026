@@ -82,12 +82,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!auth) return;
     set({ error: null });
     try {
-      if (import.meta.env.DEV) {
-        await signInWithPopup(auth, googleProvider);
-      } else {
-        await signInWithRedirect(auth, googleProvider);
-      }
+      await signInWithPopup(auth, googleProvider);
     } catch (e: unknown) {
+      // Popup blocked — fall back to redirect
+      if (e instanceof Error && (e.message.includes('popup-blocked') || e.message.includes('popup_blocked'))) {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
       const msg = e instanceof Error ? e.message : 'Sign-in failed';
       set({ error: msg });
     }
