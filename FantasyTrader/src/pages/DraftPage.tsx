@@ -182,7 +182,7 @@ export default function DraftPage() {
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">
               Available — {available.length} remaining
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
               {STOCK_POOL.map(stock => {
                 const isPicked = pickedSymbols.has(stock.symbol);
                 const pickedByPick = isPicked ? room?.picks.find(p => p.symbol === stock.symbol) : null;

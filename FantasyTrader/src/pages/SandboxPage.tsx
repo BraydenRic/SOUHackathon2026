@@ -107,7 +107,7 @@ export default function SandboxPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* Markets */}
-          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4 h-[calc(100vh-200px)] flex flex-col">
+          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4 h-[60vh] lg:h-[calc(100vh-200px)] flex flex-col">
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">Markets</p>
             <div className="flex-1 min-h-0">
               <StockList prices={prices} selectedSymbol={selectedSymbol} onSelect={setSelectedSymbol} />

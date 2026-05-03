@@ -208,7 +208,7 @@ export default function LobbyPage() {
               <h2 className="font-heading font-bold text-xl text-[#ede8df] tracking-tight mb-1">Choose Duration</h2>
               <p className="text-[#7a6e60] text-sm">How long will portfolios compete?</p>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(['1m', '1h', '1d', '1w'] as GameDuration[]).map(d => (
                 <button
                   key={d}

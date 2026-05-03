@@ -119,7 +119,7 @@ export default function GamePage() {
                 <span className="text-[10px] font-semibold text-[#22c55e] bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.2)] px-2 py-0.5 rounded-full">Leading</span>
               )}
             </div>
-            <p className={`font-mono font-bold text-5xl tabular-nums tracking-tight ${myPicks.gainPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ff4560]'}`}
+            <p className={`font-mono font-bold text-3xl sm:text-5xl tabular-nums tracking-tight ${myPicks.gainPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ff4560]'}`}
               style={{ textShadow: myPicks.gainPercent >= 0 ? '0 0 40px rgba(34,197,94,0.3)' : '0 0 40px rgba(255,69,96,0.3)' }}
             >
               {formatSignedPercent(myPicks.gainPercent, 4)}
@@ -135,7 +135,7 @@ export default function GamePage() {
                 <span className="text-[10px] font-semibold text-[#5a8a88] bg-[rgba(90,138,136,0.1)] border border-[rgba(90,138,136,0.2)] px-2 py-0.5 rounded-full">Leading</span>
               )}
             </div>
-            <p className={`font-mono font-bold text-5xl tabular-nums tracking-tight ${opponentPicks.gainPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ff4560]'}`}
+            <p className={`font-mono font-bold text-3xl sm:text-5xl tabular-nums tracking-tight ${opponentPicks.gainPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ff4560]'}`}
               style={{ textShadow: opponentPicks.gainPercent >= 0 ? '0 0 40px rgba(34,197,94,0.2)' : '0 0 40px rgba(255,69,96,0.2)' }}
             >
               {formatSignedPercent(opponentPicks.gainPercent, 4)}

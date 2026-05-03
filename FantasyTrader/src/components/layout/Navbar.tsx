@@ -55,7 +55,7 @@ export function Navbar() {
               <Link
                 key={to}
                 to={to}
-                className={`text-[13px] px-3 py-1.5 rounded-md transition-colors font-medium ${
+                className={`hidden sm:block text-[13px] px-3 py-1.5 rounded-md transition-colors font-medium ${
                   isActive(to)
                     ? activeColor
                     : 'text-[#7a6e60] hover:text-[#ede8df] hover:bg-white/[0.04]'
@@ -99,7 +99,7 @@ export function Navbar() {
 
             <button
               onClick={handleSignOut}
-              className="text-[#7a6e60] hover:text-[#ede8df] text-[13px] px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors cursor-pointer"
+              className="hidden sm:block text-[#7a6e60] hover:text-[#ede8df] text-[13px] px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors cursor-pointer"
             >
               Sign Out
             </button>
