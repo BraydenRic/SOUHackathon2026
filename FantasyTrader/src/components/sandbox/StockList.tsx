@@ -39,7 +39,7 @@ export function StockList({ prices, selectedSymbol, onSelect }: StockListProps) 
             onClick={() => setSector(s)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-150 cursor-pointer ${
               sector === s
-                ? 'bg-[rgba(200,168,130,0.1)] text-[#c8a882] ring-1 ring-[rgba(200,168,130,0.3)]'
+                ? 'bg-[rgba(90,138,136,0.1)] text-[#5a8a88] ring-1 ring-[rgba(90,138,136,0.3)]'
                 : 'bg-white/[0.03] text-[#7a6e60] hover:text-[#ede8df] hover:bg-white/[0.06] border border-white/[0.06]'
             }`}
           >

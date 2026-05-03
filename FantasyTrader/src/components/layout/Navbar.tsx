@@ -47,10 +47,10 @@ export function Navbar() {
         {user ? (
           <>
             {[
-              { to: '/sandbox',     label: 'Sandbox',     activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
+              { to: '/sandbox',     label: 'Sandbox',     activeColor: 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)]' },
               { to: '/lobby',       label: 'Lobby',       activeColor: 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)]' },
-              { to: '/history',     label: 'History',     activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
-              { to: '/leaderboard', label: 'Leaderboard', activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
+              { to: '/history',     label: 'History',     activeColor: 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)]' },
+              { to: '/leaderboard', label: 'Leaderboard', activeColor: 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)]' },
             ].map(({ to, label, activeColor }) => (
               <Link
                 key={to}
@@ -101,17 +101,17 @@ export function Navbar() {
               onClick={handleSignOut}
               className="text-[#7a6e60] hover:text-[#ede8df] text-[13px] px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors cursor-pointer"
             >
-              Out
+              Sign Out
             </button>
           </>
-        ) : (
+        ) : !isActive('/login') ? (
           <Link
             to="/login"
-            className="text-sm font-medium text-[#c8a882] hover:text-[#7c9df9] px-3 py-1.5 rounded-lg bg-[rgba(200,168,130,0.08)] hover:bg-[rgba(200,168,130,0.12)] border border-[rgba(200,168,130,0.2)] transition-all"
+            className="text-sm font-medium text-[#c8a882] px-3 py-1.5 rounded-lg bg-[rgba(200,168,130,0.08)] hover:bg-[rgba(200,168,130,0.12)] border border-[rgba(200,168,130,0.2)] transition-all"
           >
             Sign in
           </Link>
-        )}
+        ) : null}
       </div>
     </nav>
   );

@@ -84,7 +84,7 @@ export default function HistoryPage() {
                     <div className="flex items-center gap-2.5">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
                         tied
-                          ? 'text-[#c8a882] bg-[rgba(200,168,130,0.08)] border-[rgba(200,168,130,0.2)]'
+                          ? 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)] border-[rgba(90,138,136,0.2)]'
                           : won
                           ? 'text-[#c8a882] bg-[rgba(200,168,130,0.08)] border-[rgba(200,168,130,0.2)]'
                           : 'text-[#ff4560] bg-[rgba(255,69,96,0.08)] border-[rgba(255,69,96,0.2)]'
@@ -101,11 +101,11 @@ export default function HistoryPage() {
                   {/* Gains */}
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: 'Your gain', val: myGain },
-                      { label: "Opponent's gain", val: oppGain },
-                    ].map(({ label, val }) => (
+                      { label: 'Your gain', val: myGain, labelColor: 'text-[#7a6e60]' },
+                      { label: "Opponent's gain", val: oppGain, labelColor: 'text-[#5a8a88]' },
+                    ].map(({ label, val, labelColor }) => (
                       <div key={label}>
-                        <p className="text-[#7a6e60] text-[11px] mb-1 uppercase tracking-wide">{label}</p>
+                        <p className={`${labelColor} text-[11px] mb-1 uppercase tracking-wide`}>{label}</p>
                         <p className={`font-mono font-black text-xl tabular-nums ${
                           val === undefined ? 'text-[#7a6e60]' :
                           val >= 0 ? 'text-[#22c55e]' : 'text-[#ff4560]'

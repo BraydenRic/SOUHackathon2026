@@ -144,7 +144,7 @@ export default function ProfilePage() {
             { label: 'Games Played', value: String(user.gamesPlayed), color: 'text-[#ede8df]' },
             { label: 'Games Won', value: String(user.gamesWon), color: 'text-[#22c55e]' },
             { label: 'Games Lost', value: String(user.gamesLost ?? 0), color: 'text-[#ff4560]' },
-            { label: 'Win Rate', value: winRate, color: 'text-[#ede8df]' },
+            { label: 'Win Rate', value: winRate, color: 'text-[#5a8a88]' },
           ].map(stat => (
             <div key={stat.label} className="bg-[#161311] border border-white/[0.07] rounded-2xl p-5 text-center">
               <p className={`font-mono font-bold text-3xl tabular-nums ${stat.color}`}>{stat.value}</p>

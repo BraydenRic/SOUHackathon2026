@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
             {/* Column headers */}
             <div className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_4.5rem_3.5rem] gap-2 px-4 py-3 border-b border-white/[0.06]">
               {['#', 'Player', 'W', 'L', 'Win%', '◈'].map((h, i) => (
-                <span key={h} className={`text-[#7a6e60] text-[11px] font-medium uppercase tracking-widest ${i === 0 || i >= 2 ? 'text-center' : ''}`}>
+                <span key={h} className={`text-[11px] font-medium uppercase tracking-widest ${i === 0 || i >= 2 ? 'text-center' : ''} ${h === 'W' ? 'text-[#5a8a88]' : 'text-[#7a6e60]'}`}>
                   {h}
                 </span>
               ))}
@@ -104,7 +104,7 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Wins */}
-                  <span className="text-center text-sm font-bold font-mono tabular-nums text-[#c8a882]">
+                  <span className="text-center text-sm font-bold font-mono tabular-nums text-[#5a8a88]">
                     {player.gamesWon}
                   </span>
 

@@ -15,9 +15,9 @@ export const StockRow = memo(function StockRow({ stock, price, isSelected, onCli
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all duration-150 cursor-pointer group ${
+      className={`w-full flex items-center justify-between px-3 py-2.5 text-left transition-all duration-150 cursor-pointer group border-b border-white/[0.04] last:border-0 ${
         isSelected
-          ? 'bg-[rgba(200,168,130,0.07)] ring-1 ring-[rgba(200,168,130,0.25)]'
+          ? 'bg-[rgba(200,168,130,0.07)] ring-1 ring-inset ring-[rgba(200,168,130,0.25)] rounded-lg'
           : 'hover:bg-white/[0.03]'
       }`}
     >
