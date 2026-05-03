@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const unsub = onAuthStateChanged(auth, async fbUser => {
       if (!fbUser) {
         await redirectPromise;
-        if (!auth.currentUser) {
+        if (!auth?.currentUser) {
           set({ user: null, firebaseUser: null, loading: false });
         }
         return;
