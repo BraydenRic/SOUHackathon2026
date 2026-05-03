@@ -83,7 +83,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code ?? '';
       if (code === 'auth/popup-blocked') {
-        set({ error: 'Popup blocked — please allow popups for this site and try again.' });
+        set({ error: 'Pop-up blocked — click the icon in your browser\'s address bar to allow pop-ups, then try again.' });
       } else {
         set({ error: e instanceof Error ? e.message : 'Sign-in failed' });
       }
