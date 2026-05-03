@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import {
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -38,6 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize() {
     if (!auth) return () => {};
+    getRedirectResult(auth).catch(() => {});
     const unsub = onAuthStateChanged(auth, async fbUser => {
       if (!fbUser) {
         set({ user: null, firebaseUser: null, loading: false });
@@ -79,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!auth) return;
     set({ error: null });
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Sign-in failed';
       set({ error: msg });
