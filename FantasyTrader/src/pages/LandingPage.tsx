@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { AuroraBackground } from '../components/ui/aurora-background';
 
 const GHOST_CHART_PATH = "M0,260 C40,240 60,200 100,180 C140,160 160,210 200,200 C240,190 260,130 300,110 C340,90 360,140 400,130 C440,120 460,80 500,60 C540,40 560,90 600,80 C640,70 660,40 700,20 C740,0 760,40 800,30";
 
@@ -49,8 +50,8 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#0a0908] overflow-hidden">
-      {/* Background */}
+    <AuroraBackground className="min-h-screen overflow-hidden block">
+      {/* Background overlays */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0"
           style={{
@@ -158,6 +159,6 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
-    </div>
+    </AuroraBackground>
   );
 }
