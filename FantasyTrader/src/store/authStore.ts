@@ -4,8 +4,6 @@ import { create } from 'zustand';
 import {
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -40,13 +38,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize() {
     if (!auth) return () => {};
-    const redirectPromise = getRedirectResult(auth).catch(() => null);
     const unsub = onAuthStateChanged(auth, async fbUser => {
       if (!fbUser) {
-        await redirectPromise;
-        if (!auth?.currentUser) {
-          set({ user: null, firebaseUser: null, loading: false });
-        }
+        set({ user: null, firebaseUser: null, loading: false });
         return;
       }
       set({ firebaseUser: fbUser });
@@ -87,13 +81,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (e: unknown) {
-      // Popup blocked — fall back to redirect
-      if (e instanceof Error && (e.message.includes('popup-blocked') || e.message.includes('popup_blocked'))) {
-        await signInWithRedirect(auth, googleProvider);
-        return;
+      const code = (e as { code?: string })?.code ?? '';
+      if (code === 'auth/popup-blocked') {
+        set({ error: 'Popup blocked — please allow popups for this site and try again.' });
+      } else {
+        set({ error: e instanceof Error ? e.message : 'Sign-in failed' });
       }
-      const msg = e instanceof Error ? e.message : 'Sign-in failed';
-      set({ error: msg });
     }
   },
 
