@@ -11,7 +11,7 @@ const blobs = [
   { color: "#7c3aed", size: "20% 35%", top: "55%", delay: "0s",   duration: "14s" },
   { color: "#059669", size: "15% 50%", top: "25%", delay: "-3s",  duration: "17s" },
   { color: "#0ea5e9", size: "22% 30%", top: "70%", delay: "-6s",  duration: "12s" },
-  { color: "#10b981", size: "18% 55%", top: "35%", delay: "-9s",  duration: "19s" },
+  { color: "#c8a882", size: "18% 55%", top: "35%", delay: "-9s",  duration: "19s" },
   { color: "#4f46e5", size: "20% 28%", top: "65%", delay: "-2s",  duration: "15s" },
   { color: "#34d399", size: "25% 45%", top: "20%", delay: "-11s", duration: "11s" },
   { color: "#7c3aed", size: "16% 52%", top: "60%", delay: "-5s",  duration: "18s" },

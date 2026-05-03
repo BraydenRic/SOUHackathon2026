@@ -1,11 +1,8 @@
-// Fixed top navigation bar — auth-aware
-
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { TitleBadge } from '../ui/TitleBadge';
 
-/** Fixed top navbar with logo, page links, and auth state. */
 export function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -14,12 +11,8 @@ export function Navbar() {
 
   const initial = user?.displayName?.charAt(0).toUpperCase() ?? '?';
 
-  function navLinkClass(path: string) {
-    return `text-sm transition-colors px-3 py-1.5 rounded-lg ${
-      pathname === path
-        ? 'text-emerald-400 bg-emerald-500/10'
-        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
-    }`;
+  function isActive(path: string) {
+    return pathname === path;
   }
 
   async function handleSignOut() {
@@ -28,59 +21,94 @@ export function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 h-14 bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 flex items-center justify-between px-6">
-      <Link to="/" className="flex items-center gap-2 text-emerald-400 font-bold text-lg tracking-tight">
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-          <polyline points="16 7 22 7 22 13" />
-        </svg>
-        Fantasy Trader
+    <nav className="fixed top-0 inset-x-0 z-50 h-13 flex items-center justify-between px-5
+      bg-[#0a0908]/90 backdrop-blur-md
+      border-b border-white/[0.06]">
+
+      {/* Logo */}
+      <Link
+        to="/"
+        className="flex items-center gap-2.5 group"
+      >
+        <div className="h-7 w-7 rounded-md bg-[#c8a882]/10 border border-[#c8a882]/20 flex items-center justify-center
+          group-hover:bg-[#c8a882]/15 transition-colors">
+          <svg className="h-3.5 w-3.5 text-[#c8a882]" fill="none" viewBox="0 0 20 14" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 11 6 5.5 10 8.5 15 3" />
+            <polyline points="12 3 15 3 15 6" />
+          </svg>
+        </div>
+        <span className="font-heading font-bold text-[15px] tracking-tight text-[#ede8df]">
+          Fantasy<span className="text-[#c8a882]">Trader</span>
+        </span>
       </Link>
 
-      <div className="flex items-center gap-2">
+      {/* Nav links + user */}
+      <div className="flex items-center gap-1">
         {user ? (
           <>
-            <Link to="/sandbox" className={navLinkClass('/sandbox')}>Sandbox</Link>
-            <Link to="/lobby" className={navLinkClass('/lobby')}>Lobby</Link>
-            <Link to="/history" className={navLinkClass('/history')}>History</Link>
-            <Link to="/leaderboard" className={navLinkClass('/leaderboard')}>Leaderboard</Link>
-
-            {/* Coin balance */}
-            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1">
-              <span className="text-sm select-none">🪙</span>
-              <span className="text-amber-400 text-sm font-semibold font-mono tabular-nums">{user.coins}</span>
-            </div>
-
-            <div className="flex items-center gap-2 ml-1 pl-2 border-l border-zinc-700">
-              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                {user.photoURL && !photoFailed ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName}
-                    referrerPolicy="no-referrer"
-                    className="h-7 w-7 rounded-full object-cover"
-                    onError={() => setPhotoFailed(true)}
-                  />
-                ) : (
-                  <div className="h-7 w-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {initial}
-                  </div>
-                )}
-                <div className="hidden sm:flex flex-col items-start leading-none gap-1">
-                  <span className="text-zinc-300 text-sm">{user.displayName}</span>
-                  {user.title && <TitleBadge titleId={user.title} size="sm" />}
-                </div>
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="text-zinc-400 hover:text-zinc-100 text-sm px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
+            {[
+              { to: '/sandbox',     label: 'Sandbox',     activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
+              { to: '/lobby',       label: 'Lobby',       activeColor: 'text-[#5a8a88] bg-[rgba(90,138,136,0.08)]' },
+              { to: '/history',     label: 'History',     activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
+              { to: '/leaderboard', label: 'Leaderboard', activeColor: 'text-[#c8a882] bg-[rgba(200,168,130,0.08)]' },
+            ].map(({ to, label, activeColor }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`text-[13px] px-3 py-1.5 rounded-md transition-colors font-medium ${
+                  isActive(to)
+                    ? activeColor
+                    : 'text-[#7a6e60] hover:text-[#ede8df] hover:bg-white/[0.04]'
+                }`}
               >
-                Sign out
-              </button>
+                {label}
+              </Link>
+            ))}
+
+            <div className="w-px h-4 bg-white/[0.08] mx-2" />
+
+            {/* Coins */}
+            <div className="flex items-center gap-1.5 bg-[rgba(200,168,130,0.07)] border border-[rgba(200,168,130,0.14)] rounded-full px-2.5 py-1">
+              <span className="text-[#c8a882] text-xs">◈</span>
+              <span className="text-[#c8a882] text-xs font-semibold font-mono tabular-nums">{user.coins}</span>
             </div>
+
+            {/* User */}
+            <Link
+              to="/profile"
+              className="flex items-center gap-2 ml-1 px-2 py-1 rounded-lg hover:bg-white/[0.04] transition-colors group"
+            >
+              {user.photoURL && !photoFailed ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  referrerPolicy="no-referrer"
+                  className="h-6 w-6 rounded-full object-cover ring-1 ring-white/10"
+                  onError={() => setPhotoFailed(true)}
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-[#c8a882]/20 border border-[#c8a882]/30 flex items-center justify-center text-[#c8a882] text-[10px] font-bold shrink-0">
+                  {initial}
+                </div>
+              )}
+              <div className="hidden sm:flex flex-col items-start leading-none gap-0.5">
+                <span className="text-[#ede8df] text-[12px] font-medium">{user.displayName}</span>
+                {user.title && <TitleBadge titleId={user.title} size="sm" />}
+              </div>
+            </Link>
+
+            <button
+              onClick={handleSignOut}
+              className="text-[#7a6e60] hover:text-[#ede8df] text-[13px] px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors cursor-pointer"
+            >
+              Out
+            </button>
           </>
         ) : (
-          <Link to="/login" className="text-sm text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg hover:bg-emerald-500/10 transition-colors">
+          <Link
+            to="/login"
+            className="text-sm font-medium text-[#c8a882] hover:text-[#7c9df9] px-3 py-1.5 rounded-lg bg-[rgba(200,168,130,0.08)] hover:bg-[rgba(200,168,130,0.12)] border border-[rgba(200,168,130,0.2)] transition-all"
+          >
             Sign in
           </Link>
         )}
