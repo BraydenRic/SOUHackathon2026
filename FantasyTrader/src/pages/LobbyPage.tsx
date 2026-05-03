@@ -1,5 +1,3 @@
-// Lobby — create or join a draft room backed by Firestore
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -13,10 +11,21 @@ import type { GameDuration, Room } from '../types';
 
 type LobbyMode = 'choose' | 'create' | 'join';
 
-const durationLabels: Record<GameDuration, string> = { '1m': '1 Min (test)', '1h': '1 Hour', '1d': '1 Day', '1w': '1 Week' };
+const durationLabels: Record<GameDuration, string> = {
+  '1m': '1 Min',
+  '1h': '1 Hour',
+  '1d': '1 Day',
+  '1w': '1 Week',
+};
+const durationDesc: Record<GameDuration, string> = {
+  '1m': 'test',
+  '1h': 'quick',
+  '1d': 'standard',
+  '1w': 'marathon',
+};
+
 const ACTIVE_STATUSES = ['waiting', 'drafting', 'active'] as const;
 
-/** Lobby page — create a Firestore-backed room or join one by code. */
 export default function LobbyPage() {
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);
@@ -33,17 +42,14 @@ export default function LobbyPage() {
   const [createError, setCreateError] = useState('');
   const [activeRooms, setActiveRooms] = useState<Room[]>([]);
 
-  // Subscribe to room once it's created so we can react when a guest joins
   const { room } = useRoom(createdRoomId);
 
-  // Auto-navigate to draft once guest joins
   useEffect(() => {
     if (room?.guestId && room.status === 'drafting') {
       navigate(`/draft/${createdRoomId}`);
     }
   }, [room, createdRoomId, navigate]);
 
-  // Fetch rooms the current user is part of that are still in progress
   useEffect(() => {
     if (!user || !db) return;
     async function fetchActive() {
@@ -56,12 +62,11 @@ export default function LobbyPage() {
         ...asHost.docs.map(d => d.data() as Room),
         ...asGuest.docs.map(d => d.data() as Room),
       ].filter(r => (ACTIVE_STATUSES as readonly string[]).includes(r.status));
-      // Sort newest first
       all.sort((a, b) => b.createdAt - a.createdAt);
       setActiveRooms(all);
     }
     fetchActive();
-  }, [user, mode]); // re-fetch when returning to choose screen
+  }, [user, mode]);
 
   async function handleCreate() {
     if (!user) return;
@@ -105,53 +110,86 @@ export default function LobbyPage() {
   }
 
   return (
-    <div className="pt-14 min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+    <div className="pt-14 min-h-screen bg-[#0a0908] flex items-center justify-center px-4 py-12"
+      style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 30%, rgba(200,168,130,0.04) 0%, #0a0908 60%)' }}
+    >
       <div className="w-full max-w-2xl">
-        <h1 className="text-zinc-100 text-3xl font-bold text-center mb-2">Lobby</h1>
-        <p className="text-zinc-400 text-center mb-10">Set up a 1v1 draft game with a friend</p>
+        <div className="text-center mb-10">
+          <h1 className="font-heading font-extrabold text-3xl tracking-tight text-[#ede8df] mb-2">Lobby</h1>
+          <p className="text-[#7a6e60] text-sm">Set up a 1v1 draft game with a friend</p>
+        </div>
 
         {mode === 'choose' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={() => setMode('create')}
-                className="bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 hover:bg-zinc-800/60 rounded-2xl p-8 text-left transition-all cursor-pointer group"
-              >
-                <div className="text-4xl mb-4"></div>
-                <h2 className="text-zinc-100 font-bold text-xl mb-2 group-hover:text-emerald-400 transition-colors">Create a Room</h2>
-                <p className="text-zinc-400 text-sm">Set a duration, get a room code, and wait for a friend to join.</p>
-              </button>
-
-              <button
-                onClick={() => setMode('join')}
-                className="bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 hover:bg-zinc-800/60 rounded-2xl p-8 text-left transition-all cursor-pointer group"
-              >
-                <div className="text-4xl mb-4"></div>
-                <h2 className="text-zinc-100 font-bold text-xl mb-2 group-hover:text-emerald-400 transition-colors">Join a Room</h2>
-                <p className="text-zinc-400 text-sm">Enter a room code from your friend to jump into their draft.</p>
-              </button>
+              {[
+                {
+                  mode: 'create' as LobbyMode,
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="3"/>
+                      <path d="M12 8v8M8 12h8"/>
+                    </svg>
+                  ),
+                  title: 'Create a Room',
+                  desc: 'Set a duration, get a code, and wait for a friend.',
+                  color: '#c8a882',
+                  glow: 'rgba(200,168,130,0.06)',
+                  border: 'rgba(200,168,130,0.15)',
+                },
+                {
+                  mode: 'join' as LobbyMode,
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                      <polyline points="10 17 15 12 10 7"/>
+                      <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                  ),
+                  title: 'Join a Room',
+                  desc: "Enter a code from your friend to join their draft.",
+                  color: '#5a8a88',
+                  glow: 'rgba(90,138,136,0.06)',
+                  border: 'rgba(90,138,136,0.15)',
+                },
+              ].map(card => (
+                <button
+                  key={card.mode}
+                  onClick={() => setMode(card.mode)}
+                  className="group text-left rounded-2xl p-7 border transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                  style={{ backgroundColor: card.glow, borderColor: card.border }}
+                >
+                  <div className="mb-5" style={{ color: card.color }}>{card.icon}</div>
+                  <h2 className="font-heading font-bold text-lg text-[#ede8df] mb-1.5 tracking-tight"
+                    style={{ transition: 'color 0.15s' }}
+                  >
+                    {card.title}
+                  </h2>
+                  <p className="text-[#7a6e60] text-sm leading-relaxed">{card.desc}</p>
+                </button>
+              ))}
             </div>
 
             {activeRooms.length > 0 && (
               <div className="mt-8">
-                <h2 className="text-zinc-400 text-xs uppercase tracking-wide mb-3">Your Active Games</h2>
+                <p className="text-[#7a6e60] text-xs uppercase tracking-widest font-medium mb-3">Active Games</p>
                 <div className="space-y-2">
                   {activeRooms.map(r => (
                     <div
                       key={r.id}
-                      className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between"
+                      className="bg-[#161311] border border-white/[0.07] rounded-xl px-4 py-3 flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <StatusBadge status={r.status} />
                         <div>
-                          <p className="text-zinc-100 text-sm font-medium">
+                          <p className="text-[#ede8df] text-sm font-medium">
                             {r.hostId === user?.uid ? 'You created' : 'You joined'} · {durationLabels[r.duration]}
                           </p>
-                          <p className="text-zinc-500 text-xs font-mono">{r.code}</p>
+                          <p className="text-[#7a6e60] text-xs font-mono mt-0.5">{r.code}</p>
                         </div>
                       </div>
                       <Button variant="secondary" size="sm" onClick={() => rejoinRoom(r)}>
-                        Rejoin
+                        Rejoin →
                       </Button>
                     </div>
                   ))}
@@ -162,25 +200,33 @@ export default function LobbyPage() {
         )}
 
         {mode === 'create' && !createdRoomId && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
-            <button onClick={() => setMode('choose')} className="text-zinc-400 hover:text-zinc-200 text-sm flex items-center gap-1 cursor-pointer">
+          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-8 space-y-7 animate-scale-in">
+            <button onClick={() => setMode('choose')} className="text-[#7a6e60] hover:text-[#ede8df] text-sm flex items-center gap-1.5 cursor-pointer transition-colors">
               ← Back
             </button>
-            <h2 className="text-zinc-100 font-bold text-xl">Choose Duration</h2>
-            <div className="flex gap-3">
+            <div>
+              <h2 className="font-heading font-bold text-xl text-[#ede8df] tracking-tight mb-1">Choose Duration</h2>
+              <p className="text-[#7a6e60] text-sm">How long will portfolios compete?</p>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
               {(['1m', '1h', '1d', '1w'] as GameDuration[]).map(d => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
-                  className={`flex-1 py-3 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                    duration === d ? 'bg-emerald-500 text-black' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  className={`flex flex-col items-center py-3.5 rounded-xl font-medium text-sm transition-all duration-150 cursor-pointer ${
+                    duration === d
+                      ? 'bg-[rgba(200,168,130,0.1)] text-[#c8a882] border border-[rgba(200,168,130,0.25)]'
+                      : 'bg-[#1e1a16] text-[#7a6e60] border border-white/[0.06] hover:text-[#ede8df] hover:border-white/[0.12]'
                   }`}
                 >
-                  {durationLabels[d]}
+                  <span className="font-mono font-bold">{durationLabels[d]}</span>
+                  <span className="text-[10px] mt-0.5 opacity-60">{durationDesc[d]}</span>
                 </button>
               ))}
             </div>
-            {createError && <p className="text-red-400 text-sm text-center">{createError}</p>}
+            {createError && (
+              <p className="text-[#ff4560] text-sm text-center">{createError}</p>
+            )}
             <Button variant="primary" size="lg" className="w-full" onClick={handleCreate} loading={creating}>
               Create Room
             </Button>
@@ -188,19 +234,25 @@ export default function LobbyPage() {
         )}
 
         {mode === 'create' && createdRoomId && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center space-y-6">
-            <p className="text-zinc-400 text-sm">Share this code with your opponent</p>
-            <div className="bg-zinc-800 rounded-2xl py-6 px-8 inline-block mx-auto">
-              <p className="text-5xl font-mono font-bold text-emerald-400 tracking-[0.3em]">
-                {room?.code ?? '...'}
-              </p>
+          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-8 text-center space-y-7 animate-scale-in">
+            <div>
+              <p className="text-[#7a6e60] text-sm mb-6">Share this code with your opponent</p>
+              <div className="bg-[#100e0c] border border-white/[0.07] rounded-2xl py-8 px-10 inline-block">
+                <p className="text-5xl font-mono font-black text-[#c8a882] tracking-[0.35em]"
+                  style={{ textShadow: '0 0 40px rgba(200,168,130,0.35)' }}
+                >
+                  {room?.code ?? '···'}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-3">
-              <Button variant="secondary" onClick={handleCopy}>
-                {copied ? '✓ Copied!' : 'Copy Code'}
+            <div className="flex flex-col items-center gap-4">
+              <Button variant="outline" onClick={handleCopy}>
+                {copied ? '✓ Copied' : 'Copy Code'}
               </Button>
-              <div className="flex items-center gap-2 text-zinc-400 text-sm">
-                <span className="h-2 w-2 bg-amber-400 rounded-full animate-pulse" />
+              <div className="flex items-center gap-2 text-[#7a6e60] text-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c8a882]"
+                  style={{ animation: 'pulse-dot 1.5s ease-in-out infinite' }}
+                />
                 Waiting for opponent…
               </div>
             </div>
@@ -208,20 +260,27 @@ export default function LobbyPage() {
         )}
 
         {mode === 'join' && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
-            <button onClick={() => setMode('choose')} className="text-zinc-400 hover:text-zinc-200 text-sm flex items-center gap-1 cursor-pointer">
+          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-8 space-y-7 animate-scale-in">
+            <button onClick={() => setMode('choose')} className="text-[#7a6e60] hover:text-[#ede8df] text-sm flex items-center gap-1.5 cursor-pointer transition-colors">
               ← Back
             </button>
-            <h2 className="text-zinc-100 font-bold text-xl">Enter Room Code</h2>
+            <div>
+              <h2 className="font-heading font-bold text-xl text-[#ede8df] tracking-tight mb-1">Enter Room Code</h2>
+              <p className="text-[#7a6e60] text-sm">Get the code from your friend</p>
+            </div>
             <input
               type="text"
               value={joinCode}
               onChange={e => setJoinCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
               maxLength={8}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-2xl font-mono font-bold text-zinc-100 tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase placeholder-zinc-600"
+              className="w-full bg-[#100e0c] border border-white/[0.08] rounded-xl px-4 py-4 text-center text-3xl font-mono font-black text-[#ede8df] tracking-[0.3em] focus:outline-none focus:border-[rgba(200,168,130,0.4)] focus:ring-0 uppercase placeholder-[#3a3028] transition-colors"
             />
-            {joinError && <p className="text-red-400 text-sm text-center">{joinError}</p>}
+            {joinError && (
+              <div className="bg-[rgba(255,69,96,0.08)] border border-[rgba(255,69,96,0.2)] rounded-lg px-4 py-2.5">
+                <p className="text-[#ff4560] text-sm text-center">{joinError}</p>
+              </div>
+            )}
             <Button variant="primary" size="lg" className="w-full" onClick={handleJoin} loading={joining}>
               Join Room
             </Button>

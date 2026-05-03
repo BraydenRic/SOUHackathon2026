@@ -40,7 +40,7 @@ export function PriceChart({ data, loading }: PriceChartProps) {
   }
 
   const isUp = data[data.length - 1].price >= data[0].price;
-  const color = isUp ? '#10b981' : '#ef4444';
+  const color = isUp ? '#c8a882' : '#ef4444';
 
   return (
     <div className="h-48 w-full">

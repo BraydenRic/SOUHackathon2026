@@ -1,5 +1,3 @@
-// Buy/sell panel for a selected stock
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/Button';
 import { formatUSD, formatSignedPercent } from '../../utils/formatters';
@@ -14,11 +12,9 @@ interface TradePanelProps {
   onSell: (symbol: string, shares: number) => void;
 }
 
-/** Trade panel for buying and selling shares of the selected stock. */
 export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: TradePanelProps) {
   const [sharesInput, setSharesInput] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Debounce validation so it doesn't flash errors while typing
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parsedShares = parseFloat(sharesInput);
@@ -37,7 +33,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
 
   function handleBuy() {
     if (!validShares || !price) return;
-    if (estimatedCost > cash) { setError(`Not enough cash (need ${formatUSD(estimatedCost)})`); return; }
+    if (estimatedCost > cash) { setError(`Need ${formatUSD(estimatedCost)} — only ${formatUSD(cash)} available`); return; }
     onBuy(symbol, parsedShares);
     setSharesInput('');
     setError(null);
@@ -59,35 +55,39 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
     : null;
 
   return (
-    <div className="bg-zinc-900 rounded-xl p-4 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-5 space-y-4">
+      <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-zinc-100 font-bold font-mono">{symbol}</h3>
+          <p className="font-mono font-black text-[#ede8df] text-lg tracking-tight">{symbol}</p>
           {price && (
-            <p className="text-2xl font-bold text-zinc-100 mt-0.5">{formatUSD(price.price)}</p>
+            <p className="text-2xl font-bold tabular-nums text-[#ede8df] mt-0.5">{formatUSD(price.price)}</p>
           )}
         </div>
         <div className="text-right">
-          <p className="text-zinc-400 text-xs">Cash available</p>
-          <p className="text-zinc-100 font-medium">{formatUSD(cash)}</p>
+          <p className="text-[#7a6e60] text-xs mb-1">Available</p>
+          <p className="text-[#ede8df] font-mono font-semibold text-sm tabular-nums">{formatUSD(cash)}</p>
         </div>
       </div>
 
       {position && (
-        <div className="bg-zinc-800/60 rounded-lg px-3 py-2.5 text-sm space-y-1">
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Shares held</span>
-            <span className="text-zinc-100 font-mono">{position.shares}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-400">Avg cost</span>
-            <span className="text-zinc-100 font-mono">{formatUSD(position.avgCost)}</span>
-          </div>
+        <div className="bg-[#100e0c] rounded-xl px-4 py-3 space-y-2">
+          {[
+            { label: 'Shares', value: String(position.shares) },
+            { label: 'Avg cost', value: formatUSD(position.avgCost) },
+          ].map(r => (
+            <div key={r.label} className="flex justify-between text-sm">
+              <span className="text-[#7a6e60]">{r.label}</span>
+              <span className="text-[#ede8df] font-mono tabular-nums">{r.value}</span>
+            </div>
+          ))}
           {unrealizedPnL !== null && (
-            <div className="flex justify-between">
-              <span className="text-zinc-400">Unrealized P&L</span>
-              <span className={`font-mono ${unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className="flex justify-between text-sm pt-1 border-t border-white/[0.05]">
+              <span className="text-[#7a6e60]">Unrealized P&L</span>
+              <span className={`font-mono font-semibold tabular-nums ${unrealizedPnL >= 0 ? 'text-[#c8a882]' : 'text-[#ff4560]'}`}>
                 {unrealizedPnL >= 0 ? '+' : ''}{formatUSD(unrealizedPnL)}
+                <span className="text-xs ml-1 opacity-70">
+                  ({formatSignedPercent(((price!.price - position.avgCost) / position.avgCost) * 100)})
+                </span>
               </span>
             </div>
           )}
@@ -95,7 +95,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
       )}
 
       <div className="space-y-2">
-        <label className="text-zinc-400 text-xs uppercase tracking-wide">Shares</label>
+        <label className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest">Shares</label>
         <input
           type="number"
           min="0"
@@ -103,42 +103,24 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
           value={sharesInput}
           onChange={e => setSharesInput(e.target.value)}
           placeholder="0"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="w-full bg-[#100e0c] border border-white/[0.08] rounded-lg px-3 py-2.5 text-[#ede8df] text-sm font-mono tabular-nums focus:outline-none focus:border-[rgba(200,168,130,0.4)] transition-colors"
         />
         {validShares && price && (
-          <p className="text-zinc-400 text-xs">
-            Estimated: <span className="text-zinc-200 font-mono">{formatUSD(estimatedCost)}</span>
+          <p className="text-[#7a6e60] text-xs">
+            Est. cost: <span className="text-[#ede8df] font-mono">{formatUSD(estimatedCost)}</span>
           </p>
         )}
-        {error && <p className="text-red-400 text-xs">{error}</p>}
+        {error && <p className="text-[#ff4560] text-xs">{error}</p>}
       </div>
 
       <div className="flex gap-2">
-        <Button
-          variant="primary"
-          className="flex-1"
-          disabled={!validShares || !price}
-          onClick={handleBuy}
-        >
+        <Button variant="primary" className="flex-1" disabled={!validShares || !price} onClick={handleBuy}>
           Buy
         </Button>
-        <Button
-          variant="danger"
-          className="flex-1"
-          disabled={!validShares || !price || !position}
-          onClick={handleSell}
-        >
+        <Button variant="danger" className="flex-1" disabled={!validShares || !price || !position} onClick={handleSell}>
           Sell
         </Button>
       </div>
-
-      {position && price && (
-        <p className="text-zinc-500 text-xs text-center">
-          Return: <span className={unrealizedPnL! >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-            {formatSignedPercent(((price.price - position.avgCost) / position.avgCost) * 100)}
-          </span>
-        </p>
-      )}
     </div>
   );
 }
