@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import {
   onAuthStateChanged,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
@@ -81,7 +82,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!auth) return;
     set({ error: null });
     try {
-      await signInWithRedirect(auth, googleProvider);
+      if (import.meta.env.DEV) {
+        await signInWithPopup(auth, googleProvider);
+      } else {
+        await signInWithRedirect(auth, googleProvider);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Sign-in failed';
       set({ error: msg });
