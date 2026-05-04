@@ -1,8 +1,14 @@
+// Fixed top navigation bar — desktop links + coin balance + profile, mobile hamburger drawer
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { TitleBadge } from '../ui/TitleBadge';
 
+/**
+ * Global navigation bar. On desktop, shows nav links, coin balance, and profile.
+ * On mobile, collapses to a hamburger button that opens a full-screen drawer.
+ */
 export function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();

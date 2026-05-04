@@ -1,3 +1,6 @@
+// Buy/sell panel for a selected stock in the Sandbox — validates share input,
+// shows current position and unrealized P&L, and dispatches trade actions.
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/Button';
 import { formatUSD, formatSignedPercent } from '../../utils/formatters';
@@ -12,6 +15,10 @@ interface TradePanelProps {
   onSell: (symbol: string, shares: number) => void;
 }
 
+/**
+ * Trade panel for buying and selling a single stock.
+ * Validates share input with a short debounce to avoid flickering errors while typing.
+ */
 export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: TradePanelProps) {
   const [sharesInput, setSharesInput] = useState('');
   const [error, setError] = useState<string | null>(null);

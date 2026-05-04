@@ -1,3 +1,8 @@
+/**
+ * Subscribes to live stock prices from Firestore (prices/latest document).
+ * On Firestore error, marks all cached prices as stale rather than clearing them,
+ * so the UI can degrade gracefully instead of going blank.
+ */
 // Reads live stock prices from Firestore.
 //
 // Backend writes to:
@@ -8,6 +13,7 @@ import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { PricesMap } from '../types';
 
+/** @param symbols - List of ticker symbols to track from the shared Firestore price document. */
 export function useStockPrices(symbols: string[]): { prices: PricesMap; loading: boolean } {
   const [prices, setPrices] = useState<PricesMap>({});
   const [loading, setLoading] = useState(true);

@@ -1,3 +1,5 @@
+// Shared button component with variant and size support
+
 import type { ReactNode } from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -29,6 +31,10 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-6 py-3 text-sm rounded-lg gap-2',
 };
 
+/**
+ * General-purpose button. Shows a spinner when `loading` is true and
+ * disables interaction while loading or when `disabled` is set.
+ */
 export function Button({
   variant = 'secondary',
   size = 'md',

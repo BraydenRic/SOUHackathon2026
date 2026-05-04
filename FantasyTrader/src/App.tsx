@@ -1,3 +1,5 @@
+// Root application component — sets up routing and initializes Firebase auth listener
+
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navbar } from './components/layout/Navbar';
@@ -13,6 +15,7 @@ import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
 
+/** Mounts the auth listener on load and renders the top-level route tree. */
 export default function App() {
   const initialize = useAuthStore(s => s.initialize);
 

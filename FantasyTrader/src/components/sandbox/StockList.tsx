@@ -1,3 +1,5 @@
+// Scrollable stock list with search and sector filter for the Sandbox page
+
 import { useState } from 'react';
 import { StockRow } from './StockRow';
 import { STOCK_POOL } from '../../lib/finnhub';
@@ -11,6 +13,10 @@ interface StockListProps {
 
 const ALL_SECTORS = ['All', ...Array.from(new Set(STOCK_POOL.map(s => s.sector))).sort()];
 
+/**
+ * Filterable, scrollable list of all stocks in the pool.
+ * Supports text search (symbol or name) and sector filter tabs.
+ */
 export function StockList({ prices, selectedSymbol, onSelect }: StockListProps) {
   const [search, setSearch] = useState('');
   const [sector, setSector] = useState('All');

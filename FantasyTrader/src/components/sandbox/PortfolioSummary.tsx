@@ -1,3 +1,6 @@
+// Displays a 4-stat summary card (Cash, Holdings, Net Worth, Total Return)
+// for the sandbox portfolio
+
 import { useMemo } from 'react';
 import { formatUSD, formatSignedPercent } from '../../utils/formatters';
 import { calcPortfolioValue, calcNetWorth, calcReturnPercent } from '../../utils/calculations';
@@ -9,6 +12,7 @@ interface PortfolioSummaryProps {
   prices: PricesMap;
 }
 
+/** Memoized portfolio summary card showing cash, holdings value, net worth, and return %. */
 export function PortfolioSummary({ cash, positions, prices }: PortfolioSummaryProps) {
   const portfolioValue = useMemo(() => calcPortfolioValue(positions, prices), [positions, prices]);
   const netWorth = useMemo(() => calcNetWorth(cash, positions, prices), [cash, positions, prices]);

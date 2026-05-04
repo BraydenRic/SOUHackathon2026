@@ -1,4 +1,6 @@
-"use client";
+// Animated aurora background used on the LandingPage.
+// Blobs drift in four directions (r, l, dr, ur) with fade-in/out so the
+// loop reset is invisible. Colors match the cream/teal design theme.
 import { cn } from "@/lib/utils";
 import React, { type ReactNode } from "react";
 
@@ -21,6 +23,10 @@ const blobs: { color: string; w: string; h: string; top: string; left: string; d
   { color: "#3d6b69", w: "28%", h: "75%",  top: "40%",  left: "-30%",  dir: "ur", delay: "-16s", duration: "24s" },
 ];
 
+/**
+ * Wraps content with an animated aurora effect — soft color blobs drifting
+ * across and diagonally behind the page content.
+ */
 export const AuroraBackground = ({
   className,
   children,

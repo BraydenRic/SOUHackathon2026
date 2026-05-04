@@ -1,3 +1,5 @@
+// Animated spinner used for page loads and button loading states
+
 interface LoadingSpinnerProps {
   fullScreen?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -5,6 +7,10 @@ interface LoadingSpinnerProps {
 
 const sizeClasses = { sm: 'h-3.5 w-3.5', md: 'h-5 w-5', lg: 'h-8 w-8' };
 
+/**
+ * Animated SVG spinner. When `fullScreen` is true, renders as a fixed overlay
+ * covering the entire viewport — used for page-level loading states.
+ */
 export function LoadingSpinner({ fullScreen = false, size = 'md' }: LoadingSpinnerProps) {
   const spinner = (
     <svg className={`${sizeClasses[size]} animate-spin`} fill="none" viewBox="0 0 24 24">

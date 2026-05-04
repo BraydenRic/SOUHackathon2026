@@ -1,3 +1,6 @@
+// Single row in the sandbox stock list — shows symbol, name, price, and daily % change.
+// Wrapped in memo to avoid re-renders when unrelated prices update.
+
 import { memo } from 'react';
 import { formatUSD, formatSignedPercent } from '../../utils/formatters';
 import type { StockMeta, StockPrice } from '../../types';

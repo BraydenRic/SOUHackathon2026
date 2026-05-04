@@ -1,4 +1,6 @@
-// Firebase app + Firestore + Auth — only initializes when env vars are present
+// Firebase app, Firestore, and Auth singletons.
+// Guards against double-initialization (getApps check) and gracefully handles
+// missing env vars by leaving db/auth as null — consumers must null-check.
 
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';

@@ -1,3 +1,5 @@
+// Small status/label pill used for game results, draft picks, and room status
+
 import type { ReactNode } from 'react';
 
 type BadgeVariant = 'green' | 'red' | 'amber' | 'blue' | 'gray';
@@ -15,6 +17,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   gray:  'bg-[rgba(255,255,255,0.05)] text-[#7a6e60] border border-white/[0.08]',
 };
 
+/** Inline pill badge with themed color variants. */
 export function Badge({ variant, children }: BadgeProps) {
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${variantClasses[variant]}`}>

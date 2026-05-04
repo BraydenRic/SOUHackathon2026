@@ -1,4 +1,5 @@
-// Shared TypeScript interfaces used across the entire app
+// Shared TypeScript interfaces and types used across the entire app.
+// All Firestore document shapes are defined here to keep the data model centralized.
 
 export interface StockMeta {
   symbol: string;
