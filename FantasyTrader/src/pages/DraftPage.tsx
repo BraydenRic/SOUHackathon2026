@@ -1,19 +1,5 @@
-/**
- * DraftPage.tsx
- *
- * This is the main draft page where two players take turns picking stocks before
- * the actual game starts. It uses a "snake draft" format, which means the pick
- * order goes: Host, Guest, Guest, Host, Host, Guest, Guest, Host — so neither
- * player gets an unfair advantage by always picking first.
- *
- * Each player has 30 seconds to make their pick. If they run out of time,
- * the game auto-picks the best performing stock for them (based on change%).
- * Everything is synced in real-time through Firestore so both players see
- * updates instantly without needing to refresh.
- *
- * Once all 8 picks are made, the host gets a button to officially start the game,
- * which redirects both players to the live game page.
- */
+// Draft page — snake draft interface with 30-second countdown timer and auto-pick on timeout
+// DRAFT_ORDER [0,1,1,0,0,1,1,0] encodes the snake pattern: host, guest, guest, host, host, guest, guest, host
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -28,154 +14,72 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import type { DraftPick } from '../types';
 
 /**
- * The snake draft order as an array of player indices.
- * 0 = host, 1 = guest.
- * Follows the pattern: H, G, G, H, H, G, G, H
- * This gives each player 4 picks total and keeps it fair.
+ * Snake draft turn order: 0 = host, 1 = guest.
+ * Pattern: H G G H H G G H (8 total picks, 4 per player)
  */
 const DRAFT_ORDER = [0, 1, 1, 0, 0, 1, 1, 0];
-
-/**
- * How many seconds each player gets to make their pick before
- * the game auto-picks for them.
- */
 const COUNTDOWN_SECONDS = 30;
-
-/** All stock symbols from the pool, used to subscribe to live prices. */
 const SYMBOLS = STOCK_POOL.map(s => s.symbol);
 
-/**
- * Radius of the circular SVG countdown ring in SVG units.
- * Used to calculate the stroke-dashoffset for the animation.
- */
-const RING_R = 22;
-
-/**
- * The full circumference of the countdown ring circle.
- * Formula: 2 * PI * radius
- * We use this to animate the ring draining as time runs out.
- */
-const RING_CIRC = 2 * Math.PI * RING_R;
-
-/**
- * DraftPage component
- *
- * Handles everything related to the pre-game stock draft:
- * - Shows available stocks and lets the current player pick one
- * - Tracks whose turn it is based on the snake draft order
- * - Runs a 30-second countdown timer that auto-picks if time expires
- * - Shows each player's picks in a sidebar as they're made
- * - Redirects to the game page once the host clicks "Start Game"
- *
- * This component subscribes to the room document in Firestore via useRoom(),
- * so any pick made by either player shows up instantly for both.
- */
+/** SVG ring geometry constants for the circular countdown indicator */
 const RING_R = 22;
 const RING_CIRC = 2 * Math.PI * RING_R;
 
+/**
+ * DraftPage — the snake draft UI where both players alternate stock picks.
+ *
+ * Key behaviours:
+ *   - `currentTurn` in Firestore drives whose turn it is; `DRAFT_ORDER[currentTurn]` maps to host (0) or guest (1)
+ *   - A 30-second countdown starts whenever it becomes the current user's turn
+ *   - If the timer hits 0 without a manual pick, `autoPickedRef` gates a single
+ *     auto-pick of the stock with the highest day-change % to prevent double-firing
+ *   - Once all 8 picks are made (`currentTurn >= 8`), the draft-complete banner appears
+ *     and only the host can advance to the game (preventing a race condition)
+ *   - `useRoom` provides a real-time Firestore listener so both clients stay in sync
+ */
 export default function DraftPage() {
-  /** Room ID pulled from the URL, e.g. /draft/:roomId */
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-
-  /** The currently logged-in user from auth state. */
   const user = useAuthStore(s => s.user);
-
-  /** Game store actions for making picks and starting the game. */
   const { makeDraftPick, startGame } = useGameStore();
-
-  /**
-   * Live room data from Firestore.
-   * This updates in real-time whenever either player makes a pick
-   * or the host starts the game.
-   */
   const { room, loading } = useRoom(roomId ?? '');
-
-  /**
-   * Live stock prices for all symbols in the pool.
-   * Used to show change% on each stock card and for auto-pick logic.
-   */
   const { prices } = useStockPrices(SYMBOLS);
 
-  /** How many seconds are left in the current player's turn. Starts at 30. */
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-
-  /** Tracks whether we're waiting for the startGame Firestore call to finish. */
   const [startingGame, setStartingGame] = useState(false);
-
-  /** Ref to the interval ID so we can clear it when the turn changes or component unmounts. */
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  /**
-   * Ref flag to make sure we only auto-pick once per turn.
-   * Without this, the interval could fire multiple times and try to pick multiple stocks.
-   */
+  // Guards against firing the auto-pick more than once per turn
   const autoPickedRef = useRef(false);
 
-  /**
-   * Whether the current user is the host of this room.
-   * Determines which player index they are (0 = host, 1 = guest).
-   */
   const isHost = room?.hostId === user?.uid;
-
-  /** 0 if the current user is the host, 1 if they're the guest. */
   const playerIndex = isHost ? 0 : 1;
 
-  /** Set of all stock symbols that have already been picked by either player. */
   const pickedSymbols = new Set(room?.picks.map(p => p.symbol) ?? []);
-
-  /** Stocks that haven't been picked yet — these are what we auto-pick from. */
   const available = STOCK_POOL.filter(s => !pickedSymbols.has(s.symbol));
 
-  /** True when all 8 picks have been made (currentTurn has gone past the last index). */
   const draftComplete = (room?.currentTurn ?? 0) >= DRAFT_ORDER.length;
-
-  /** Which player index (0 or 1) should be picking right now. */
   const currentPlayerIndex = DRAFT_ORDER[room?.currentTurn ?? 0] ?? 0;
-
-  /** True if it's currently this user's turn to pick. */
   const isMyTurn = !draftComplete && currentPlayerIndex === playerIndex;
 
-  /**
-   * Once the host clicks "Start Game" and Firestore updates the room status to 'active',
-   * both players get redirected to the live game page automatically.
-   * This fires for both the host and the guest since they're both listening to the room.
-   */
+  // Navigate to the game page once the host calls startGame and status flips to 'active'
   useEffect(() => {
     if (room?.status === 'active' && roomId) navigate(`/game/${roomId}`);
   }, [room?.status, roomId, navigate]);
 
-  /**
-   * Reset the countdown back to 30 seconds every time the turn changes.
-   * Also reset the auto-pick flag so the new player gets a fresh 30 seconds.
-   * This fires whenever currentTurn changes in Firestore, which happens after each pick.
-   */
+  // Reset the countdown and auto-pick guard each time the turn advances in Firestore
   useEffect(() => {
     setCountdown(COUNTDOWN_SECONDS);
     autoPickedRef.current = false;
   }, [room?.currentTurn]);
 
-  /**
-   * The main countdown timer effect.
-   * Only runs when it's this player's turn and the draft isn't done.
-   *
-   * Every second it ticks down the countdown. When it hits 0:
-   * 1. It checks that we haven't already auto-picked this turn (autoPickedRef)
-   * 2. It finds the stock with the highest change% from the available ones
-   * 3. It calls handlePick() with that stock symbol
-   *
-   * We use a ref for the interval so we can clear it when the effect re-runs
-   * or when the component unmounts — otherwise we'd have a memory leak.
-   *
-   * The eslint disable comment is intentional — handlePick is defined below
-   * and adding it to the dependency array would cause infinite re-renders.
-   */
+  // Run the countdown interval only on this player's turn
   useEffect(() => {
     if (draftComplete || !isMyTurn) return;
     if (countdownRef.current) clearInterval(countdownRef.current);
     countdownRef.current = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
+          // Time's up — auto-pick the stock with the best day-change % if not already done
           if (!autoPickedRef.current && available.length > 0) {
             autoPickedRef.current = true;
             const best = available.reduce((a, b) =>
@@ -193,93 +97,42 @@ export default function DraftPage() {
   }, [room?.currentTurn, draftComplete, isMyTurn]);
 
   /**
-   * handlePick - submits a draft pick to Firestore
-   *
-   * Called either when a player clicks a stock card, or automatically
-   * when their 30 seconds run out. Does a bunch of safety checks first
-   * to make sure the pick is actually valid before sending it to Firestore.
-   *
-   * @param symbol - The stock ticker symbol being picked (e.g. "AAPL")
+   * Records a pick in Firestore. The `draftPrice` snapshot captures the live
+   * price at pick time — this becomes the baseline for gain calculations during the game.
    */
   function handlePick(symbol: string) {
-    // Safety checks — don't pick if we're missing required data
     if (!roomId || !user || !room || draftComplete) return;
-
-    // Don't allow picking a stock that's already been taken
     if (pickedSymbols.has(symbol)) return;
-
     const pick: DraftPick = {
       userId: user.uid,
       symbol,
       pickNumber: room.currentTurn,
-      // Lock in the current price as the "draft price" so we can calculate
-      // gain/loss later based on where it started when they picked it
       draftPrice: prices[symbol]?.price ?? 0,
     };
-
     makeDraftPick(roomId, pick);
   }
 
-  /**
-   * handleStartGame - called when the host clicks the "Start Game" button
-   *
-   * Only the host can start the game (guest sees a waiting message instead).
-   * Sets a loading state so the button shows a spinner while the Firestore
-   * write is happening. Navigation to the game page is handled by the
-   * useEffect watching room.status above.
-   */
   async function handleStartGame() {
     if (!roomId) return;
     setStartingGame(true);
     await startGame(roomId);
-    // Don't need to navigate here — the useEffect above handles it
-    // once Firestore updates room.status to 'active'
   }
 
-  /**
-   * countdownPct - what fraction of time is remaining (0 to 1)
-   * Used to calculate how much of the SVG ring to show.
-   */
-  const countdownPct = countdown / COUNTDOWN_SECONDS;
-
-  /**
-   * ringOffset - how far to offset the SVG stroke so it looks like it's draining.
-   * When offset = 0, the full ring is visible. When offset = RING_CIRC, ring is empty.
-   */
-  const ringOffset = RING_CIRC * (1 - countdownPct);
-
-  /** True when 10 or fewer seconds remain — used to switch the ring to red. */
-  const isUrgent = countdown <= 10;
-
-  /** Quick lookup map from symbol string to stock metadata (name, sector, etc.) */
-  const stockBySymbol = Object.fromEntries(STOCK_POOL.map(s => [s.symbol, s]));
-
-  /** All picks made by the host so far. */
+  // SVG ring progress: full circle = timer full, no circle = time expired
   const countdownPct = countdown / COUNTDOWN_SECONDS;
   const ringOffset = RING_CIRC * (1 - countdownPct);
   const isUrgent = countdown <= 10;
 
   const stockBySymbol = Object.fromEntries(STOCK_POOL.map(s => [s.symbol, s]));
   const hostPicks = room?.picks.filter(p => p.userId === room.hostId) ?? [];
-
-  /** All picks made by the guest so far. */
   const guestPicks = room?.picks.filter(p => p.userId === room.guestId) ?? [];
-
-  /**
-   * Display names for each player.
-   * "You" refers to whoever is currently logged in, "Opponent" is the other person.
-   */
+  // Labels from this player's perspective — "You" for self, "Opponent" for the other
   const hostName = isHost ? 'You' : 'Opponent';
   const guestName = isHost ? 'Opponent' : 'You';
 
-  // Show a full-screen spinner while we're waiting for the room data to load from Firestore
   if (loading || !room) return <LoadingSpinner fullScreen />;
 
-  /**
-   * Waiting screen — shown when the room is still in 'waiting' status,
-   * meaning the second player hasn't joined yet.
-   * The host sees this after creating the room until someone joins.
-   */
+  // Guest arrives before host has shared the link — show a waiting state
   if (room.status === 'waiting') {
     return (
       <div className="pt-14 min-h-screen bg-[#0a0908] flex items-center justify-center">
@@ -296,46 +149,25 @@ export default function DraftPage() {
     );
   }
 
-  /**
-   * Main draft UI — shown once both players are in the room and the draft is underway.
-   *
-   * Layout:
-   * - Header with the circular countdown timer
-   * - "Draft complete" banner once all picks are in (only visible when done)
-   * - Stock grid (takes up 2/3 of the width on large screens)
-   * - Picks sidebar showing each player's selections and the pick order (1/3 width)
-   */
   return (
     <div className="pt-14 min-h-screen bg-[#0a0908] px-4 py-6">
       <div className="max-w-6xl mx-auto">
 
-        {/* Page header — shows title and the circular countdown timer */}
-        {/* Header */}
+        {/* Header — title on the left, circular countdown ring on the right */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading font-extrabold text-2xl tracking-tight text-[#ede8df]">Draft</h1>
             <p className="text-[#7a6e60] text-sm mt-0.5">Snake draft · 4 picks each</p>
           </div>
 
-          {/* Circular SVG countdown ring — only shows while draft is in progress */}
           {!draftComplete && (
             <div className="flex flex-col items-center gap-1">
-              <div className="relative w-14 h-14">
-                {/*
-                  SVG ring that drains clockwise as time runs out.
-                  We rotate -90deg so it starts draining from the top instead of the right.
-                  strokeDashoffset controls how much of the ring is visible.
-                */}
-                <svg viewBox="0 0 52 52" className="w-14 h-14 -rotate-90">
-                  {/* Background track ring */}
-                  <circle cx="26" cy="26" r={RING_R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                  {/* Foreground ring that drains as time runs out */}
-          {!draftComplete && (
-            <div className="flex flex-col items-center gap-1">
-              {/* Circular countdown ring */}
+              {/* Circular SVG timer ring — rotated -90° so progress starts at the top */}
               <div className="relative w-14 h-14">
                 <svg viewBox="0 0 52 52" className="w-14 h-14 -rotate-90">
+                  {/* Track (background circle) */}
                   <circle cx="26" cy="26" r={RING_R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                  {/* Progress arc — strokeDashoffset controls how much of the ring is visible */}
                   <circle
                     cx="26" cy="26" r={RING_R}
                     fill="none"
@@ -347,14 +179,13 @@ export default function DraftPage() {
                     style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }}
                   />
                 </svg>
-                {/* Countdown number in the center of the ring */}
+                {/* Countdown number centred inside the ring */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className={`font-mono font-black text-sm tabular-nums ${isUrgent ? 'text-[#ff4560]' : isMyTurn ? 'text-[#c8a882]' : 'text-[#7a6e60]'}`}>
                     {isMyTurn ? countdown : '—'}
                   </span>
                 </div>
               </div>
-              {/* Label below the ring showing whose turn it is */}
               <p className={`text-[11px] font-medium ${currentPlayerIndex === playerIndex ? 'text-[#c8a882]' : 'text-[#7a6e60]'}`}>
                 {currentPlayerIndex === playerIndex ? 'Your pick' : "Opponent's pick"}
               </p>
@@ -362,12 +193,7 @@ export default function DraftPage() {
           )}
         </div>
 
-        {/*
-          Draft complete banner — appears once all 8 picks are made.
-          The host gets a "Start Game" button. The guest just sees a waiting message
-          since we don't want the guest to be able to start the game early.
-        */}
-        {/* Draft complete banner */}
+        {/* Draft complete banner — only the host can start the game to avoid a race condition */}
         {draftComplete && (
           <div className="bg-[rgba(200,168,130,0.06)] border border-[rgba(200,168,130,0.2)] rounded-2xl px-5 py-4 mb-6 flex items-center justify-between">
             <div>
@@ -386,13 +212,7 @@ export default function DraftPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-          {/*
-            Stock grid — shows all available stocks as clickable cards.
-            Cards are disabled if the stock is already picked, draft is done,
-            or it's not this player's turn.
-            Each card shows the ticker, company name, and current change%.
-          */}
-          {/* Stock grid */}
+          {/* Stock grid — all 50 stocks; picked ones are dimmed with a player initial badge */}
           <div className="lg:col-span-2">
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">
               Available — {available.length} remaining
@@ -418,10 +238,7 @@ export default function DraftPage() {
                         : 'bg-[#100e0c] border-white/[0.05] opacity-60 cursor-not-allowed'
                     }`}
                   >
-                    {/*
-                      Small initial badge in the top-right corner of picked cards,
-                      showing which player picked it (H for host, Y/O for you/opponent).
-                    */}
+                    {/* Small player-initial dot in the top-right corner of picked cards */}
                     {isPicked && pickedByPick && (
                       <span className={`absolute top-1.5 right-1.5 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center ${
                         pickedByHost
@@ -433,13 +250,12 @@ export default function DraftPage() {
                     )}
                     <p className="font-mono font-black text-[#ede8df] text-sm">{stock.symbol}</p>
                     <p className="text-[#7a6e60] text-[10px] truncate mt-0.5">{stock.name}</p>
-                    {/* Show live change% for unpicked stocks */}
+                    {/* Day-change % — amber if up, red if down; hidden on already-picked cards */}
                     {pct !== undefined && !isPicked && (
                       <span className={`text-[10px] font-mono font-semibold mt-1.5 inline-block ${isUp ? 'text-[#c8a882]' : 'text-[#ff4560]'}`}>
                         {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
                       </span>
                     )}
-                    {/* Show who picked it for already-picked stocks */}
                     {isPicked && (
                       <Badge variant={pickedByHost ? 'green' : 'blue'}>
                         {pickedByHost ? hostName : guestName}
@@ -451,18 +267,8 @@ export default function DraftPage() {
             </div>
           </div>
 
-          {/*
-            Right sidebar — shows each player's picks as they come in,
-            plus the snake draft pick order indicator at the bottom.
-          */}
-          {/* Picks sidebar */}
+          {/* Sidebar — each player's picks so far, plus the full pick-order visualiser */}
           <div className="space-y-4">
-
-            {/*
-              Pick lists for both players.
-              Empty slots show as pulsing placeholder boxes so players
-              can see how many picks are left.
-            */}
             {[
               { name: hostName, picks: hostPicks, color: '#c8a882', dimBg: 'rgba(200,168,130,0.05)', dimBorder: 'rgba(200,168,130,0.15)' },
               { name: guestName, picks: guestPicks, color: '#5a8a88', dimBg: 'rgba(90,138,136,0.05)', dimBorder: 'rgba(90,138,136,0.15)' },
@@ -475,7 +281,6 @@ export default function DraftPage() {
                   <span className="text-[#7a6e60] text-xs font-mono">{picks.length}/4</span>
                 </div>
                 <div className="space-y-2">
-                  {/* Filled pick slots */}
                   {picks.map((pick, i) => (
                     <div key={pick.symbol} className="flex items-center gap-2.5 bg-[rgba(255,255,255,0.04)] rounded-lg px-3 py-2">
                       <span className="text-[#7a6e60] text-xs font-mono w-4 shrink-0">{i + 1}</span>
@@ -485,7 +290,7 @@ export default function DraftPage() {
                       </div>
                     </div>
                   ))}
-                  {/* Empty placeholder slots for remaining picks */}
+                  {/* Placeholder slots for picks not yet made */}
                   {Array.from({ length: 4 - picks.length }).map((_, i) => (
                     <div key={i} className="h-[48px] bg-white/[0.02] rounded-lg border border-dashed border-white/[0.06] flex items-center justify-center">
                       <span className="text-[#3a3028] text-xs">Pick {picks.length + i + 1}</span>
@@ -495,12 +300,7 @@ export default function DraftPage() {
               </div>
             ))}
 
-            {/*
-              Pick order indicator — shows all 8 picks as little circles,
-              with the current pick highlighted with a ring.
-              Past picks are grayed out, future picks are dim.
-            */}
-            {/* Pick order */}
+            {/* Pick order — 8 circles showing H/G sequence; current turn gets a coloured ring */}
             <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4">
               <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">Pick Order</p>
               <div className="flex gap-1.5 flex-wrap">

@@ -1,19 +1,19 @@
-/**
- * Subscribes to live stock prices from Firestore (prices/latest document).
- * On Firestore error, marks all cached prices as stale rather than clearing them,
- * so the UI can degrade gracefully instead of going blank.
- */
-// Reads live stock prices from Firestore.
+// Subscribes to live stock prices from a shared Firestore document (prices/latest).
+// On error, marks cached prices as stale rather than clearing them so the UI degrades gracefully.
 //
-// Backend writes to:
-//   prices/latest  →  { prices: { [symbol]: { price, updatedAt } }, updatedAt }
+// Firestore doc shape written by the backend price updater:
+//   prices/latest → { prices: { [symbol]: { price, prevClose, changePercent, updatedAt } } }
 
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { PricesMap } from '../types';
 
-/** @param symbols - List of ticker symbols to track from the shared Firestore price document. */
+/**
+ * Real-time hook that keeps a subset of the shared price document in sync.
+ * @param symbols - Ticker symbols to extract from the shared Firestore price document.
+ * @returns prices map and a loading flag that clears on the first snapshot.
+ */
 export function useStockPrices(symbols: string[]): { prices: PricesMap; loading: boolean } {
   const [prices, setPrices] = useState<PricesMap>({});
   const [loading, setLoading] = useState(true);

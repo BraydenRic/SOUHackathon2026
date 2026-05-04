@@ -1,3 +1,5 @@
+// Profile page — displays user stats, coin balance, coin transaction history, and the title shop
+
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -7,6 +9,10 @@ import { TitleBadge } from '../components/ui/TitleBadge';
 import { TITLES, TITLE_MAP } from '../lib/titles';
 import type { CoinTransaction } from '../types';
 
+/**
+ * SVG icon elements for each title in the shop.
+ * Keyed by title ID so they map 1-to-1 with the TITLES array.
+ */
 const SHOP_ICONS: Record<string, React.ReactElement> = {
   day_trader: (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
@@ -46,6 +52,21 @@ const SHOP_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
+/**
+ * ProfilePage — the current user's personal hub.
+ *
+ * Sections:
+ *   1. Identity header — avatar, display name, equipped title, email, coin balance
+ *   2. Stats grid — games played, won, lost, win rate
+ *   3. Title shop — buy or equip cosmetic titles with coins
+ *   4. Coin history — last 20 coin transactions ordered by most recent
+ *
+ * Title shop flow:
+ *   - If the user hasn't bought a title yet, the button shows "Buy" and costs coins
+ *   - If owned but not equipped, shows "Equip" (free)
+ *   - If currently equipped, shows "Equipped" (disabled)
+ *   - `titleLoading` tracks which specific title is in-flight so the correct button spins
+ */
 export default function ProfilePage() {
   const user = useAuthStore(s => s.user);
   const { purchaseTitle, equipTitle } = useAuthStore();
@@ -54,6 +75,7 @@ export default function ProfilePage() {
   const [titleLoading, setTitleLoading] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
 
+  // Fetch the most recent 20 coin transactions for this user
   useEffect(() => {
     if (!user || !db) { setTxLoading(false); return; }
     (async () => {
@@ -67,6 +89,7 @@ export default function ProfilePage() {
         const snap = await getDocs(q);
         setTransactions(snap.docs.map(d => d.data() as CoinTransaction));
       } catch {
+        // On error, leave the list empty — the empty state message handles it gracefully
         setTransactions([]);
       } finally {
         setTxLoading(false);
@@ -74,13 +97,20 @@ export default function ProfilePage() {
     })();
   }, [user?.uid]);
 
+  // Show spinner while auth store resolves the user
   if (!user) return <LoadingSpinner fullScreen />;
 
   const winRate = user.gamesPlayed > 0
     ? `${((user.gamesWon / user.gamesPlayed) * 100).toFixed(1)}%`
     : '—';
+  // Set for O(1) ownership checks in the title shop
   const owned = new Set(user.purchasedTitles ?? []);
 
+  /**
+   * Handles both buying and equipping a title.
+   * If the title is already owned, calls `equipTitle`; otherwise calls `purchaseTitle`.
+   * A single `titleLoading` string tracks which card is in-flight.
+   */
   async function handleTitleAction(titleId: string, cost: number, label: string) {
     setTitleError(null);
     setTitleLoading(titleId);
@@ -101,9 +131,10 @@ export default function ProfilePage() {
     <div className="pt-14 min-h-screen bg-[#0a0908]">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
 
-        {/* Identity header */}
+        {/* ── Section 1: Identity header ── */}
         <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-7">
           <div className="flex items-center gap-5">
+            {/* Avatar — photo if available, otherwise initial letter */}
             {user.photoURL ? (
               <img
                 src={user.photoURL}
@@ -119,6 +150,7 @@ export default function ProfilePage() {
               <h1 className="font-sans font-bold text-2xl tracking-tight text-[#ede8df] leading-none">
                 {user.displayName}
               </h1>
+              {/* Equipped title badge — only rendered if the user has one set */}
               {user.title && (
                 <div className="mt-2">
                   <TitleBadge titleId={user.title} size="md" />
@@ -127,7 +159,7 @@ export default function ProfilePage() {
               <p className="text-[#7a6e60] text-sm mt-2">{user.email}</p>
             </div>
 
-            {/* Coin balance */}
+            {/* Coin balance pill — separated visually from the text info */}
             <div className="flex-shrink-0 flex items-center gap-3 bg-[rgba(200,168,130,0.06)] border border-[rgba(200,168,130,0.14)] rounded-2xl px-5 py-3.5">
               <span className="text-[#c8a882] text-2xl font-black">◈</span>
               <div>
@@ -138,7 +170,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* ── Section 2: Stats grid ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Games Played', value: String(user.gamesPlayed), color: 'text-[#ede8df]' },
@@ -153,13 +185,14 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* Title shop */}
+        {/* ── Section 3: Title shop ── */}
         <div className="bg-[#161311] border border-white/[0.07] rounded-2xl overflow-hidden">
           <div className="px-6 py-5 border-b border-white/[0.06]">
             <h2 className="font-heading font-bold text-lg text-[#ede8df] tracking-tight">Titles</h2>
             <p className="text-[#7a6e60] text-sm mt-0.5">Shown next to your name everywhere in the app</p>
           </div>
 
+          {/* Purchase/equip error message */}
           {titleError && (
             <div className="mx-5 mt-5 bg-[rgba(255,69,96,0.08)] border border-[rgba(255,69,96,0.2)] text-[#ff4560] text-sm px-4 py-2.5 rounded-xl">
               {titleError}
@@ -178,15 +211,18 @@ export default function ProfilePage() {
                 <div
                   key={t.id}
                   className={`rounded-xl border p-4 flex flex-col gap-4 transition-all duration-150 ${
+                    // Equipped titles use the title's themed background; others use the default dark card
                     isEquipped
                       ? `${def.bg}`
                       : 'bg-[#100e0c] border-white/[0.07]'
                   }`}
                 >
+                  {/* Title icon — colour matches the title's theme */}
                   <div className={def.color}>{SHOP_ICONS[t.id]}</div>
 
                   <div className="flex items-center gap-2">
                     <p className="text-[#ede8df] font-semibold text-sm">{t.label}</p>
+                    {/* "On" badge appears when this title is currently equipped */}
                     {isEquipped && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${def.bg} ${def.color}`}>
                         On
@@ -195,6 +231,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="mt-auto flex items-center justify-between">
+                    {/* Cost or "Owned" label */}
                     <span className="text-[#7a6e60] text-xs font-mono">
                       {isOwned ? 'Owned' : `${t.cost} ◈`}
                     </span>
@@ -210,6 +247,7 @@ export default function ProfilePage() {
                           ? 'bg-white/[0.06] hover:bg-white/[0.1] text-[#ede8df]'
                           : canAfford
                           ? 'bg-[#c8a882] hover:bg-[#b8987a] text-black'
+                          // Not enough coins — visually disabled but `disabled` attr is already set
                           : 'bg-white/[0.03] text-[#3a3028] cursor-not-allowed'
                       }`}
                     >
@@ -222,7 +260,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Coin history */}
+        {/* ── Section 4: Coin history ── last 20 transactions, newest first */}
         <div className="bg-[#161311] border border-white/[0.07] rounded-2xl overflow-hidden">
           <div className="px-6 py-5 border-b border-white/[0.06]">
             <h2 className="font-heading font-bold text-lg text-[#ede8df] tracking-tight">Coin History</h2>
@@ -244,6 +282,7 @@ export default function ProfilePage() {
                       {new Date(tx.timestamp).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
+                  {/* Positive amounts are amber (earned); negative amounts are red (spent) */}
                   <span className={`font-mono font-bold text-sm tabular-nums ${tx.amount > 0 ? 'text-[#c8a882]' : 'text-[#ff4560]'}`}>
                     {tx.amount > 0 ? `+${tx.amount}` : tx.amount} ◈
                   </span>

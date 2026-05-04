@@ -62,9 +62,10 @@ export const useSandboxStore = create<SandboxState>((set, get) => ({
   buy(symbol, shares, price, userId) {
     const { cash, positions } = get();
     const total = shares * price;
-    if (total > cash) return;
+    if (total > cash) return; // Insufficient funds — silently ignore; UI disables the button anyway
 
     const existing = positions[symbol];
+    // Weighted average cost basis — blends the old position cost with the new purchase price
     const newAvgCost = existing
       ? (existing.avgCost * existing.shares + total) / (existing.shares + shares)
       : price;
@@ -93,7 +94,7 @@ export const useSandboxStore = create<SandboxState>((set, get) => ({
   sell(symbol, shares, price, userId) {
     const { positions } = get();
     const existing = positions[symbol];
-    if (!existing || existing.shares < shares) return;
+    if (!existing || existing.shares < shares) return; // Can't sell what you don't own
 
     const total = shares * price;
     const tx: Transaction = {
@@ -104,6 +105,7 @@ export const useSandboxStore = create<SandboxState>((set, get) => ({
     set(s => {
       const remaining = existing.shares - shares;
       const newPositions = { ...s.positions };
+      // Remove the position entirely when all shares are sold
       if (remaining <= 0) {
         delete newPositions[symbol];
       } else {

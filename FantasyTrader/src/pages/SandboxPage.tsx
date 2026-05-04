@@ -1,26 +1,4 @@
-/**
- * SandboxPage.tsx
- *
- * This is the sandbox page — the solo paper trading mode where users can
- * practice buying and selling stocks without any real money or competitive
- * pressure. Everyone starts with $10,000 in fake cash and can trade from
- * a pool of 20 real stocks using live price data from the Finnhub API.
- *
- * The portfolio is persisted to Firestore so your positions and cash balance
- * are saved between sessions — you can close the tab and come back later
- * and everything will still be there.
- *
- * The page is split into two columns on large screens:
- * - Left side: scrollable list of all available stocks with live prices
- * - Right side: price chart for the selected stock, trade panel, and portfolio summary
- *
- * Below both columns is a transaction history table showing every buy and sell
- * the user has made in this sandbox session.
- *
- * There's also a "Reset Portfolio" button that wipes everything back to the
- * starting $10,000 — useful if you want to start fresh or just made a mess
- * of your portfolio learning how things work.
- */
+// Sandbox page — solo paper trading with $10,000 virtual cash, live prices, and full transaction history
 
 import { useEffect, useState, useCallback } from 'react';
 import { StockList } from '../components/sandbox/StockList';
@@ -35,21 +13,12 @@ import { STOCK_POOL, fetchAggBars } from '../lib/finnhub';
 import type { PricePoint, Timeframe } from '../types';
 import { formatUSD } from '../utils/formatters';
 
-/** All stock symbols from the pool — passed to useStockPrices to subscribe to live data. */
 const ALL_SYMBOLS = STOCK_POOL.map(s => s.symbol);
-
-/** The starting cash balance for a fresh sandbox portfolio. */
 const INITIAL_CASH = 10_000;
 
 /**
- * dateStr - returns a date string N days ago in YYYY-MM-DD format.
- *
- * Used to calculate the 'from' date when fetching historical chart data
- * from the Polygon/Finnhub API. For example, dateStr(7) gives you the
- * date string for one week ago.
- *
- * @param daysAgo - How many days back from today to go
- * @returns Date string in YYYY-MM-DD format
+ * Returns an ISO date string (YYYY-MM-DD) for `daysAgo` days before today.
+ * Used to build the `from` / `to` range for Polygon aggregate bar requests.
  */
 function dateStr(daysAgo: number): string {
   const d = new Date();
@@ -58,114 +27,47 @@ function dateStr(daysAgo: number): string {
 }
 
 /**
- * SandboxPage component
+ * SandboxPage — risk-free paper trading environment.
  *
- * The main paper trading interface. Handles:
- * - Loading the user's portfolio from Firestore on mount
- * - Subscribing to live stock prices and syncing them into the portfolio store
- * - Fetching historical chart data when the user selects a stock or changes timeframe
- * - Buy/sell trade execution that updates both local state and Firestore
- * - Portfolio reset with a confirmation step so users don't accidentally wipe it
+ * Layout:
+ *   - Left column: scrollable stock list with live price ticks
+ *   - Right column (when a stock is selected): price chart + trade panel
+ *   - Below: transaction history table (only renders if there are any trades)
+ *
+ * State notes:
+ *   - `selectedSymbol` drives both the chart fetch and the trade panel
+ *   - `timeframe` (1D / 1W / 1M) changes the Polygon bar resolution
+ *   - Portfolio state (cash, positions, transactions) lives in sandboxStore,
+ *     persisted to Firestore so progress survives page refreshes
  */
 export default function SandboxPage() {
-  /** The currently logged-in user — needed to load/save their specific portfolio. */
   const user = useAuthStore(s => s.user);
+  const { cash, positions, transactions, loading, loadFromFirestore, buy, sell, updatePrices, reset } = useSandboxStore();
 
-  /**
-   * Sandbox store — holds all the portfolio state and actions.
-   * - cash: how much fake money the user has left to spend
-   * - positions: map of symbol -> shares owned and average cost
-   * - transactions: full history of every buy/sell
-   * - loading: whether the portfolio is still being fetched from Firestore
-   * - loadFromFirestore: loads the user's saved portfolio on mount
-   * - buy/sell: execute trades and persist them to Firestore
-   * - updatePrices: syncs the latest live prices into the positions
-   * - reset: wipes the portfolio back to the starting $10,000
-   */
-  const {
-    cash,
-    positions,
-    transactions,
-    loading,
-    loadFromFirestore,
-    buy,
-    sell,
-    updatePrices,
-    reset
-  } = useSandboxStore();
-
-  /** The stock symbol the user has clicked on in the list, or null if nothing is selected. */
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-
-  /** Historical price data for the selected stock, used to render the chart. */
   const [chartData, setChartData] = useState<PricePoint[]>([]);
-
-  /** Whether the chart data is currently being fetched from the API. */
   const [chartLoading, setChartLoading] = useState(false);
-
-  /** The currently selected chart timeframe — 1 day, 1 week, or 1 month. */
   const [timeframe, setTimeframe] = useState<Timeframe>('1D');
-
-  /**
-   * Whether the reset confirmation banner is currently visible.
-   * We show this as an inline confirmation instead of a modal so it's
-   * less disruptive — user clicks "Reset Portfolio", banner appears,
-   * they have to click "Reset" again to actually confirm.
-   */
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  /**
-   * Live stock prices for all symbols in the pool.
-   * pricesLoading is true while the initial price data is being fetched.
-   * Once loaded, we sync these prices into the sandbox store so position
-   * values and portfolio totals reflect current market prices.
-   */
+  // Live price quotes — polled on an interval inside the hook
   const { prices, loading: pricesLoading } = useStockPrices(ALL_SYMBOLS);
 
-  /**
-   * Load the user's portfolio from Firestore on mount.
-   *
-   * We depend on user?.uid so this re-runs if the user somehow changes
-   * (like logging out and back in), but in practice it just runs once.
-   *
-   * The eslint disable is intentional — loadFromFirestore is a store function
-   * that doesn't change, so including it in the dependency array isn't necessary
-   * and would cause unnecessary re-renders.
-   */
+  // Load persisted portfolio from Firestore once the user is resolved
   useEffect(() => {
     if (user) loadFromFirestore(user.uid);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
-  /**
-   * Sync live prices into the portfolio store whenever they update.
-   *
-   * We wait for pricesLoading to be false before calling updatePrices
-   * so we don't sync a partial or empty price object on the first render.
-   * updatePrices recalculates the current value of each position based
-   * on the latest prices so the portfolio summary stays up to date.
-   */
+  // Keep position values current whenever new price quotes arrive
   useEffect(() => {
     if (!pricesLoading) updatePrices(prices);
   }, [prices, pricesLoading, updatePrices]);
 
   /**
-   * fetchChart - fetches historical OHLC price data for a stock and timeframe.
-   *
-   * Called whenever the user selects a stock or changes the timeframe selector.
-   * Maps the timeframe to the appropriate date range and bar interval:
-   * - 1D: last 24 hours, minute-level bars
-   * - 1W: last 7 days, hourly bars
-   * - 1M: last 30 days, daily bars
-   *
-   * Clears existing chart data before fetching so the chart doesn't show
-   * stale data from the previous selection while loading.
-   *
-   * Wrapped in useCallback so it doesn't get recreated on every render —
-   * it's used as a dependency in the effect below.
-   *
-   * @param symbol - The stock ticker to fetch chart data for
-   * @param tf - The timeframe to fetch ('1D', '1W', or '1M')
+   * Fetches OHLCV aggregate bars from the Polygon API for the selected symbol
+   * and timeframe. Resolution is coarser for longer windows to keep payloads small:
+   *   1D → minute bars  |  1W → hourly bars  |  1M → daily bars
    */
   const fetchChart = useCallback(async (symbol: string, tf: Timeframe) => {
     setChartLoading(true);
@@ -179,36 +81,21 @@ export default function SandboxPage() {
       const data = await fetchAggBars(symbol, from, to, timespan);
       setChartData(data);
     } catch {
-      // If the API call fails just show an empty chart rather than crashing
+      // On any fetch error, leave the chart empty — PriceChart handles the empty state
       setChartData([]);
     } finally {
       setChartLoading(false);
     }
   }, []);
 
-  /**
-   * Re-fetch chart data whenever the selected symbol or timeframe changes.
-   * Only runs if something is actually selected — no point fetching if
-   * the user hasn't clicked on a stock yet.
-   */
+  // Re-fetch chart whenever the selected stock or timeframe changes
   useEffect(() => {
     if (selectedSymbol) fetchChart(selectedSymbol, timeframe);
   }, [selectedSymbol, timeframe, fetchChart]);
 
-  /**
-   * Look up the full stock metadata (name, sector) for the selected symbol.
-   * Used to show the company name below the ticker in the chart header.
-   */
   const selectedStock = STOCK_POOL.find(s => s.symbol === selectedSymbol);
 
-  /**
-   * Show a simple loading message while the portfolio is being fetched from Firestore.
-   * We don't use the full LoadingSpinner here since we want the page chrome to
-   * still be visible — just the content area shows a loading state.
-   */
-  if (loading) return (
-    <div className="pt-20 min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-zinc-400">Loading portfolio…</div>
+  // Show a simple text spinner while Firestore loads the saved portfolio
   if (loading) return (
     <div className="pt-14 min-h-screen bg-[#0a0908] flex items-center justify-center">
       <p className="text-[#7a6e60] text-sm">Loading portfolio…</p>
@@ -219,43 +106,26 @@ export default function SandboxPage() {
     <div className="pt-14 min-h-screen bg-[#0a0908]">
       <div className="max-w-7xl mx-auto px-4 py-6">
 
-        {/* Page header with title and reset button */}
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading font-extrabold text-2xl tracking-tight text-[#ede8df]">Sandbox</h1>
             <p className="text-[#7a6e60] text-sm mt-0.5">Paper trading · live prices · no risk</p>
           </div>
-          {/*
-            Reset button — opens the confirmation banner below.
-            Using 'danger' variant so it's visually distinct and users
-            don't accidentally click it.
-          */}
+          {/* Reset triggers a confirmation banner before wiping all positions */}
           <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)}>
             Reset
           </Button>
         </div>
 
-        {/*
-          Reset confirmation banner — only visible after clicking "Reset Portfolio".
-          Requires a second click to actually confirm, preventing accidental resets.
-          Resetting calls reset() from the sandbox store which wipes Firestore
-          and sets cash back to $10,000 with no positions.
-        */}
-        {showResetConfirm && (
-          <div className="mb-4 bg-red-900/30 border border-red-700/50 rounded-xl p-4 flex items-center justify-between">
-            <p className="text-zinc-200 text-sm">
-              Reset portfolio to {formatUSD(INITIAL_CASH)}? This cannot be undone.
-        {/* Reset confirm */}
+        {/* Reset confirmation inline banner — shown instead of a modal to keep the flow lightweight */}
         {showResetConfirm && (
           <div className="mb-5 bg-[rgba(255,69,96,0.06)] border border-[rgba(255,69,96,0.2)] rounded-xl px-5 py-3.5 flex items-center justify-between">
             <p className="text-[#ede8df] text-sm">
               Reset portfolio to <span className="font-mono font-semibold">{formatUSD(INITIAL_CASH)}</span>? Cannot be undone.
             </p>
             <div className="flex gap-2 ml-4 shrink-0">
-              <Button size="sm" variant="ghost" onClick={() => setShowResetConfirm(false)}>
-                Cancel
-              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowResetConfirm(false)}>Cancel</Button>
               <Button size="sm" variant="danger" onClick={() => {
                 if (user) reset(user.uid);
                 setShowResetConfirm(false);
@@ -266,69 +136,28 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {/*
-          Main two-column layout.
-          Left column: stock list (scrollable, fixed height)
-          Right column: chart + trade panel + portfolio summary
-        */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/*
-            Left column — stock list.
-            Fixed height based on viewport so it scrolls independently
-            without the whole page scrolling. The min-h-0 on the inner
-            div is needed to make overflow scroll work correctly inside
-            a flex container.
-          */}
-          <div className="bg-zinc-900 rounded-2xl p-4 h-[calc(100vh-220px)] flex flex-col">
-            <h2 className="text-zinc-100 font-semibold mb-3">Markets</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* Markets */}
+          {/* Markets — scrollable stock list takes the left column */}
           <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4 h-[60vh] lg:h-[calc(100vh-200px)] flex flex-col">
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">Markets</p>
             <div className="flex-1 min-h-0">
-              <StockList
-                prices={prices}
-                selectedSymbol={selectedSymbol}
-                onSelect={setSelectedSymbol}
-              />
+              <StockList prices={prices} selectedSymbol={selectedSymbol} onSelect={setSelectedSymbol} />
             </div>
           </div>
 
-          {/*
-            Right column — chart, trade panel, and portfolio summary.
-            Shows a placeholder message if no stock is selected yet.
-          */}
+          {/* Right panel — chart + trade controls when a stock is selected, else empty state */}
           <div className="space-y-4">
             {selectedSymbol ? (
               <>
-                {/*
-                  Chart card — shows the price chart for the selected stock
-                  with timeframe toggle buttons (1D / 1W / 1M).
-                  The active timeframe button is highlighted in emerald.
-                */}
-                <div className="bg-zinc-900 rounded-2xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h2 className="text-zinc-100 font-bold font-mono">{selectedSymbol}</h2>
-                      {selectedStock && (
-                        <p className="text-zinc-400 text-xs">{selectedStock.name}</p>
-                      )}
-                    </div>
-                    {/* Timeframe toggle buttons */}
-                    <div className="flex gap-1">
-          {/* Right panel */}
-          <div className="space-y-4">
-            {selectedSymbol ? (
-              <>
-                {/* Chart */}
+                {/* Price chart with timeframe selector */}
                 <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h2 className="font-mono font-black text-[#ede8df] text-lg tracking-tight">{selectedSymbol}</h2>
                       {selectedStock && <p className="text-[#7a6e60] text-xs mt-0.5">{selectedStock.name}</p>}
                     </div>
+                    {/* Timeframe toggle — 1D / 1W / 1M */}
                     <div className="flex gap-1 bg-[#100e0c] rounded-lg p-1">
                       {(['1D', '1W', '1M'] as Timeframe[]).map(tf => (
                         <button
@@ -348,12 +177,7 @@ export default function SandboxPage() {
                   <PriceChart data={chartData} loading={chartLoading} />
                 </div>
 
-                {/*
-                  Trade panel — buy and sell form for the selected stock.
-                  We look up the current price before calling buy/sell so the
-                  store always gets the most up-to-date price at trade time.
-                  We guard against missing prices with the `if (p && user)` check.
-                */}
+                {/* Trade panel — buy / sell with quantity input */}
                 <TradePanel
                   symbol={selectedSymbol}
                   price={prices[selectedSymbol]}
@@ -370,11 +194,7 @@ export default function SandboxPage() {
                 />
               </>
             ) : (
-              /* Placeholder shown when no stock is selected yet */
-              <div className="bg-zinc-900 rounded-2xl p-8 text-center">
-                <p className="text-zinc-500">
-                  Select a stock from the list to view its chart and trade.
-                </p>
+              // Placeholder shown before the user selects a stock
               <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-10 text-center">
                 <div className="w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center mx-auto mb-3">
                   <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#7a6e60]" stroke="currentColor" strokeWidth={1.5}>
@@ -385,21 +205,12 @@ export default function SandboxPage() {
               </div>
             )}
 
-            {/*
-              Portfolio summary — always visible regardless of stock selection.
-              Shows total portfolio value, cash remaining, and position breakdown.
-            */}
+            {/* Portfolio summary — cash balance + open positions + total P&L */}
             <PortfolioSummary cash={cash} positions={positions} prices={prices} />
           </div>
         </div>
 
-        {/*
-          Transaction history table — only rendered if the user has made at least one trade.
-          Shows every buy and sell with date, symbol, type, shares, price per share, and total.
-          Green left border for buys, red for sells so you can scan it quickly.
-          Horizontally scrollable on small screens so the table doesn't break the layout.
-        */}
-        {/* Transaction History */}
+        {/* Transaction history — only rendered once there's at least one trade */}
         {transactions.length > 0 && (
           <div className="mt-5 bg-[#161311] border border-white/[0.07] rounded-2xl p-5">
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-4">Transactions</p>
@@ -417,31 +228,6 @@ export default function SandboxPage() {
                 </thead>
                 <tbody>
                   {transactions.map(tx => (
-                    <tr
-                      key={tx.id}
-                      /* Green left border for buys, red for sells */
-                      className={`border-l-2 ${tx.type === 'buy' ? 'border-emerald-500' : 'border-red-500'}`}
-                    >
-                      <td className="py-2 pl-2 text-zinc-400">
-                        {/* Format the timestamp as a short date + time string */}
-                        {new Date(tx.timestamp).toLocaleString([], {
-                          dateStyle: 'short',
-                          timeStyle: 'short'
-                        })}
-                      </td>
-                      <td className="py-2 font-mono font-bold text-zinc-100">{tx.symbol}</td>
-                      <td className={`py-2 capitalize font-medium ${
-                        tx.type === 'buy' ? 'text-emerald-400' : 'text-red-400'
-                      }`}>
-                        {tx.type}
-                      </td>
-                      <td className="py-2 text-right font-mono text-zinc-200">{tx.shares}</td>
-                      <td className="py-2 text-right font-mono text-zinc-200">
-                        {formatUSD(tx.pricePerShare)}
-                      </td>
-                      <td className="py-2 text-right font-mono text-zinc-100 font-medium">
-                        {formatUSD(tx.total)}
-                      </td>
                     <tr key={tx.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                       <td className="py-2.5 text-[#7a6e60] text-xs">
                         {new Date(tx.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}

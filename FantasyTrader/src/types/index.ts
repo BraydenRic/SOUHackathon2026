@@ -13,6 +13,7 @@ export interface StockPrice {
   prevClose: number;
   changePercent: number;
   lastUpdated: number;
+  /** True when the Firestore listener errored — UI shows price but dims it */
   stale?: boolean;
 }
 
@@ -89,6 +90,7 @@ export interface Room {
   winnerId: string | null;
   coinReward: number;
   createdAt: number;
+  /** Written by the host when the game ends via completeGame() */
   hostGainPercent?: number;
   guestGainPercent?: number;
 }

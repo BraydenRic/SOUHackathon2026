@@ -8,6 +8,7 @@ export interface TitleDef {
   bg: string;      // Tailwind bg + border classes for the badge pill
 }
 
+/** All purchasable titles in ascending coin cost order */
 export const TITLES: TitleDef[] = [
   {
     id: 'day_trader',
@@ -53,6 +54,7 @@ export const TITLES: TitleDef[] = [
   },
 ];
 
+/** Lookup map for O(1) access by title ID — derived from TITLES array */
 export const TITLE_MAP: Record<string, TitleDef> = Object.fromEntries(
   TITLES.map(t => [t.id, t]),
 );

@@ -14,6 +14,10 @@ interface TooltipPayload {
   payload: PricePoint;
 }
 
+/**
+ * Custom Recharts tooltip — shows the price and timestamp at the hovered data point.
+ * Recharts injects `active` and `payload` automatically via the Tooltip `content` prop.
+ */
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
   if (!active || !payload?.length) return null;
   const { value, payload: point } = payload[0];
@@ -39,6 +43,7 @@ export function PriceChart({ data, loading }: PriceChartProps) {
     );
   }
 
+  // Chart color is determined by whether the latest price is above the opening price
   const isUp = data[data.length - 1].price >= data[0].price;
   const color = isUp ? '#c8a882' : '#ef4444';
 

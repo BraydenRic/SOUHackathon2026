@@ -85,7 +85,9 @@ export const useGameStore = create<GameState>((set) => ({
     if (snap.empty) return null;
     const roomDoc = snap.docs[0];
     const room = roomDoc.data() as Room;
+    // Reject if someone already joined — room is single-occupancy
     if (room.guestId) return null;
+    // Setting status to 'drafting' triggers the host's useRoom listener to navigate to the draft page
     await updateDoc(roomDoc.ref, { guestId, status: 'drafting' });
     return roomDoc.id;
   },
@@ -123,10 +125,12 @@ export const useGameStore = create<GameState>((set) => ({
 
   async recordMyResult(userId, roomId, winnerId, coinReward) {
     if (!db) return;
+    // Module-level Set prevents double-recording if the effect fires more than once
     const key = `${userId}:${roomId}`;
     if (recordedRooms.has(key)) return;
     recordedRooms.add(key);
     const isWinner = winnerId === userId;
+    // null winnerId = tie; both players increment gamesTied rather than gamesWon/gamesLost
     const isTie = winnerId === null;
     const outcome = isWinner
       ? { gamesWon: increment(1), coins: increment(coinReward) }

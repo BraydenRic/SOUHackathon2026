@@ -18,16 +18,19 @@ export function Navbar() {
 
   const initial = user?.displayName?.charAt(0).toUpperCase() ?? '?';
 
+  /** Returns true when the current route matches `path` — used to apply the active link style */
   function isActive(path: string) {
     return pathname === path;
   }
 
+  /** Signs out, redirects to /login, and closes the mobile drawer */
   async function handleSignOut() {
     await signOutUser();
     navigate('/login');
     setMenuOpen(false);
   }
 
+  /** Ordered list of navigation links shown in both the desktop nav and mobile drawer */
   const navLinks = [
     { to: '/sandbox',     label: 'Sandbox' },
     { to: '/lobby',       label: 'Lobby' },

@@ -28,6 +28,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
   const validShares = !isNaN(parsedShares) && parsedShares > 0;
   const estimatedCost = validShares && price ? parsedShares * price.price : 0;
 
+  // Debounce validation so errors don't flash while the user is still typing
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -38,6 +39,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [sharesInput, validShares]);
 
+  /** Validates cash and dispatches the buy — clears input on success */
   function handleBuy() {
     if (!validShares || !price) return;
     if (estimatedCost > cash) { setError(`Need ${formatUSD(estimatedCost)} — only ${formatUSD(cash)} available`); return; }
@@ -46,6 +48,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
     setError(null);
   }
 
+  /** Validates share ownership and dispatches the sell — clears input on success */
   function handleSell() {
     if (!validShares || !price) return;
     if (!position || parsedShares > position.shares) {
@@ -57,6 +60,7 @@ export function TradePanel({ symbol, price, position, cash, onBuy, onSell }: Tra
     setError(null);
   }
 
+  // Unrealized P&L = (current price − avg cost) × shares held; null when no position
   const unrealizedPnL = position && price
     ? (price.price - position.avgCost) * position.shares
     : null;

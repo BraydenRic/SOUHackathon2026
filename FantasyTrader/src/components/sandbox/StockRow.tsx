@@ -12,7 +12,13 @@ interface StockRowProps {
   onClick: () => void;
 }
 
+/**
+ * A single selectable row in the stock list.
+ * Renders skeleton placeholders when `price` is undefined (prices still loading).
+ * Wrapped in React.memo so the list doesn't re-render every row on each price tick.
+ */
 export const StockRow = memo(function StockRow({ stock, price, isSelected, onClick }: StockRowProps) {
+  // Default to "up" styling when price hasn't loaded yet — avoids a red flash on mount
   const isUp = price ? price.changePercent >= 0 : true;
 
   return (

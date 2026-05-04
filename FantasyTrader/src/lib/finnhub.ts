@@ -57,6 +57,10 @@ export const STOCK_POOL: StockMeta[] = [
 
 const BASE = 'https://finnhub.io/api/v1';
 
+/**
+ * Reads the Finnhub API key from the Vite env. Throws a descriptive error if
+ * the key is missing so developers get a clear message instead of a 401.
+ */
 function getApiKey(): string {
   const key = import.meta.env.VITE_FINNHUB_API_KEY as string;
   if (!key || key === 'your_finnhub_api_key_here') {
@@ -65,6 +69,7 @@ function getApiKey(): string {
   return key;
 }
 
+/** Maps our internal timespan names to Finnhub's resolution parameter values */
 const RESOLUTION_MAP: Record<'minute' | 'hour' | 'day', string> = {
   minute: '1',
   hour:   '60',
