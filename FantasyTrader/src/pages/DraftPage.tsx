@@ -70,6 +70,9 @@ const RING_CIRC = 2 * Math.PI * RING_R;
  * This component subscribes to the room document in Firestore via useRoom(),
  * so any pick made by either player shows up instantly for both.
  */
+const RING_R = 22;
+const RING_CIRC = 2 * Math.PI * RING_R;
+
 export default function DraftPage() {
   /** Room ID pulled from the URL, e.g. /draft/:roomId */
   const { roomId } = useParams<{ roomId: string }>();
@@ -252,6 +255,11 @@ export default function DraftPage() {
   const stockBySymbol = Object.fromEntries(STOCK_POOL.map(s => [s.symbol, s]));
 
   /** All picks made by the host so far. */
+  const countdownPct = countdown / COUNTDOWN_SECONDS;
+  const ringOffset = RING_CIRC * (1 - countdownPct);
+  const isUrgent = countdown <= 10;
+
+  const stockBySymbol = Object.fromEntries(STOCK_POOL.map(s => [s.symbol, s]));
   const hostPicks = room?.picks.filter(p => p.userId === room.hostId) ?? [];
 
   /** All picks made by the guest so far. */
@@ -302,6 +310,7 @@ export default function DraftPage() {
       <div className="max-w-6xl mx-auto">
 
         {/* Page header — shows title and the circular countdown timer */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-heading font-extrabold text-2xl tracking-tight text-[#ede8df]">Draft</h1>
@@ -321,6 +330,12 @@ export default function DraftPage() {
                   {/* Background track ring */}
                   <circle cx="26" cy="26" r={RING_R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
                   {/* Foreground ring that drains as time runs out */}
+          {!draftComplete && (
+            <div className="flex flex-col items-center gap-1">
+              {/* Circular countdown ring */}
+              <div className="relative w-14 h-14">
+                <svg viewBox="0 0 52 52" className="w-14 h-14 -rotate-90">
+                  <circle cx="26" cy="26" r={RING_R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
                   <circle
                     cx="26" cy="26" r={RING_R}
                     fill="none"
@@ -352,6 +367,7 @@ export default function DraftPage() {
           The host gets a "Start Game" button. The guest just sees a waiting message
           since we don't want the guest to be able to start the game early.
         */}
+        {/* Draft complete banner */}
         {draftComplete && (
           <div className="bg-[rgba(200,168,130,0.06)] border border-[rgba(200,168,130,0.2)] rounded-2xl px-5 py-4 mb-6 flex items-center justify-between">
             <div>
@@ -376,6 +392,7 @@ export default function DraftPage() {
             or it's not this player's turn.
             Each card shows the ticker, company name, and current change%.
           */}
+          {/* Stock grid */}
           <div className="lg:col-span-2">
             <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">
               Available — {available.length} remaining
@@ -438,6 +455,7 @@ export default function DraftPage() {
             Right sidebar — shows each player's picks as they come in,
             plus the snake draft pick order indicator at the bottom.
           */}
+          {/* Picks sidebar */}
           <div className="space-y-4">
 
             {/*
@@ -482,6 +500,7 @@ export default function DraftPage() {
               with the current pick highlighted with a ring.
               Past picks are grayed out, future picks are dim.
             */}
+            {/* Pick order */}
             <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4">
               <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">Pick Order</p>
               <div className="flex gap-1.5 flex-wrap">

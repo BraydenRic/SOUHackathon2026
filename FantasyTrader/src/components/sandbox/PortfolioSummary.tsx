@@ -1,4 +1,5 @@
-// Four-metric portfolio overview card
+// Displays a 4-stat summary card (Cash, Holdings, Net Worth, Total Return)
+// for the sandbox portfolio
 
 import { useMemo } from 'react';
 import { formatUSD, formatSignedPercent } from '../../utils/formatters';
@@ -11,49 +12,34 @@ interface PortfolioSummaryProps {
   prices: PricesMap;
 }
 
-interface MetricCardProps {
-  label: string;
-  value: string;
-  highlight?: 'positive' | 'negative' | 'neutral';
-  large?: boolean;
-}
-
-function MetricCard({ label, value, highlight = 'neutral', large = false }: MetricCardProps) {
-  const valueClass = highlight === 'positive'
-    ? 'text-emerald-400'
-    : highlight === 'negative'
-    ? 'text-red-400'
-    : 'text-zinc-100';
-
-  return (
-    <div className="bg-zinc-800/60 rounded-xl p-3">
-      <p className="text-zinc-400 text-xs uppercase tracking-wide mb-1">{label}</p>
-      <p className={`font-mono font-bold ${large ? 'text-xl' : 'text-base'} ${valueClass}`}>{value}</p>
-    </div>
-  );
-}
-
-/** Displays cash, portfolio value, net worth, and total return. */
+/** Memoized portfolio summary card showing cash, holdings value, net worth, and return %. */
 export function PortfolioSummary({ cash, positions, prices }: PortfolioSummaryProps) {
   const portfolioValue = useMemo(() => calcPortfolioValue(positions, prices), [positions, prices]);
   const netWorth = useMemo(() => calcNetWorth(cash, positions, prices), [cash, positions, prices]);
   const returnPct = useMemo(() => calcReturnPercent(positions, prices), [positions, prices]);
 
-  const returnHighlight = returnPct > 0 ? 'positive' : returnPct < 0 ? 'negative' : 'neutral';
+  const isUp = returnPct >= 0;
 
   return (
-    <div className="bg-zinc-900 rounded-xl p-4">
-      <h3 className="text-zinc-100 font-semibold mb-3">Portfolio</h3>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCard label="Cash" value={formatUSD(cash)} />
-        <MetricCard label="Holdings" value={formatUSD(portfolioValue)} />
-        <MetricCard label="Net Worth" value={formatUSD(netWorth)} large />
-        <MetricCard
-          label="Total Return"
-          value={formatSignedPercent(returnPct)}
-          highlight={returnHighlight}
-          large
-        />
+    <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-5">
+      <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-4">Portfolio</p>
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: 'Cash', value: formatUSD(cash), color: 'text-[#ede8df]' },
+          { label: 'Holdings', value: formatUSD(portfolioValue), color: 'text-[#ede8df]' },
+          { label: 'Net Worth', value: formatUSD(netWorth), color: 'text-[#ede8df]', large: true },
+          {
+            label: 'Total Return',
+            value: formatSignedPercent(returnPct),
+            color: isUp ? 'text-[#22c55e]' : 'text-[#ff4560]',
+            large: true,
+          },
+        ].map(m => (
+          <div key={m.label} className="bg-[#100e0c] rounded-xl p-3.5">
+            <p className="text-[#7a6e60] text-[11px] uppercase tracking-wide mb-1.5">{m.label}</p>
+            <p className={`font-mono font-bold tabular-nums ${m.large ? 'text-lg' : 'text-sm'} ${m.color}`}>{m.value}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

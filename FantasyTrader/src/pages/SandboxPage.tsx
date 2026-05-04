@@ -209,18 +209,22 @@ export default function SandboxPage() {
   if (loading) return (
     <div className="pt-20 min-h-screen bg-zinc-950 flex items-center justify-center">
       <div className="text-zinc-400">Loading portfolio…</div>
+  if (loading) return (
+    <div className="pt-14 min-h-screen bg-[#0a0908] flex items-center justify-center">
+      <p className="text-[#7a6e60] text-sm">Loading portfolio…</p>
     </div>
   );
 
   return (
-    <div className="pt-20 min-h-screen bg-zinc-950">
+    <div className="pt-14 min-h-screen bg-[#0a0908]">
       <div className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Page header with title and reset button */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-zinc-100 text-2xl font-bold">Sandbox</h1>
-            <p className="text-zinc-400 text-sm">Paper trading with live market data</p>
+            <h1 className="font-heading font-extrabold text-2xl tracking-tight text-[#ede8df]">Sandbox</h1>
+            <p className="text-[#7a6e60] text-sm mt-0.5">Paper trading · live prices · no risk</p>
           </div>
           {/*
             Reset button — opens the confirmation banner below.
@@ -228,7 +232,7 @@ export default function SandboxPage() {
             don't accidentally click it.
           */}
           <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)}>
-            Reset Portfolio
+            Reset
           </Button>
         </div>
 
@@ -242,6 +246,11 @@ export default function SandboxPage() {
           <div className="mb-4 bg-red-900/30 border border-red-700/50 rounded-xl p-4 flex items-center justify-between">
             <p className="text-zinc-200 text-sm">
               Reset portfolio to {formatUSD(INITIAL_CASH)}? This cannot be undone.
+        {/* Reset confirm */}
+        {showResetConfirm && (
+          <div className="mb-5 bg-[rgba(255,69,96,0.06)] border border-[rgba(255,69,96,0.2)] rounded-xl px-5 py-3.5 flex items-center justify-between">
+            <p className="text-[#ede8df] text-sm">
+              Reset portfolio to <span className="font-mono font-semibold">{formatUSD(INITIAL_CASH)}</span>? Cannot be undone.
             </p>
             <div className="flex gap-2 ml-4 shrink-0">
               <Button size="sm" variant="ghost" onClick={() => setShowResetConfirm(false)}>
@@ -251,7 +260,7 @@ export default function SandboxPage() {
                 if (user) reset(user.uid);
                 setShowResetConfirm(false);
               }}>
-                Reset
+                Confirm Reset
               </Button>
             </div>
           </div>
@@ -273,6 +282,11 @@ export default function SandboxPage() {
           */}
           <div className="bg-zinc-900 rounded-2xl p-4 h-[calc(100vh-220px)] flex flex-col">
             <h2 className="text-zinc-100 font-semibold mb-3">Markets</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+          {/* Markets */}
+          <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4 h-[60vh] lg:h-[calc(100vh-200px)] flex flex-col">
+            <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-3">Markets</p>
             <div className="flex-1 min-h-0">
               <StockList
                 prices={prices}
@@ -304,14 +318,26 @@ export default function SandboxPage() {
                     </div>
                     {/* Timeframe toggle buttons */}
                     <div className="flex gap-1">
+          {/* Right panel */}
+          <div className="space-y-4">
+            {selectedSymbol ? (
+              <>
+                {/* Chart */}
+                <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="font-mono font-black text-[#ede8df] text-lg tracking-tight">{selectedSymbol}</h2>
+                      {selectedStock && <p className="text-[#7a6e60] text-xs mt-0.5">{selectedStock.name}</p>}
+                    </div>
+                    <div className="flex gap-1 bg-[#100e0c] rounded-lg p-1">
                       {(['1D', '1W', '1M'] as Timeframe[]).map(tf => (
                         <button
                           key={tf}
                           onClick={() => setTimeframe(tf)}
-                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer ${
                             timeframe === tf
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                              ? 'bg-[rgba(200,168,130,0.12)] text-[#c8a882]'
+                              : 'text-[#7a6e60] hover:text-[#ede8df]'
                           }`}
                         >
                           {tf}
@@ -349,6 +375,13 @@ export default function SandboxPage() {
                 <p className="text-zinc-500">
                   Select a stock from the list to view its chart and trade.
                 </p>
+              <div className="bg-[#161311] border border-white/[0.07] rounded-2xl p-10 text-center">
+                <div className="w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center mx-auto mb-3">
+                  <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5 text-[#7a6e60]" stroke="currentColor" strokeWidth={1.5}>
+                    <path d="M2 14 L6 9 L9.5 11.5 L14 6 L18 3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <p className="text-[#7a6e60] text-sm">Select a stock to view its chart and trade</p>
               </div>
             )}
 
@@ -366,19 +399,20 @@ export default function SandboxPage() {
           Green left border for buys, red for sells so you can scan it quickly.
           Horizontally scrollable on small screens so the table doesn't break the layout.
         */}
+        {/* Transaction History */}
         {transactions.length > 0 && (
-          <div className="mt-6 bg-zinc-900 rounded-2xl p-4">
-            <h2 className="text-zinc-100 font-semibold mb-3">Transaction History</h2>
+          <div className="mt-5 bg-[#161311] border border-white/[0.07] rounded-2xl p-5">
+            <p className="text-[#7a6e60] text-xs font-medium uppercase tracking-widest mb-4">Transactions</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-zinc-500 text-xs uppercase tracking-wide border-b border-zinc-800">
-                    <th className="text-left pb-2 font-medium">Date</th>
-                    <th className="text-left pb-2 font-medium">Symbol</th>
-                    <th className="text-left pb-2 font-medium">Type</th>
-                    <th className="text-right pb-2 font-medium">Shares</th>
-                    <th className="text-right pb-2 font-medium">Price</th>
-                    <th className="text-right pb-2 font-medium">Total</th>
+                  <tr className="text-[#7a6e60] text-[11px] uppercase tracking-widest border-b border-white/[0.06]">
+                    <th className="text-left pb-3 font-medium">Date</th>
+                    <th className="text-left pb-3 font-medium">Symbol</th>
+                    <th className="text-left pb-3 font-medium">Type</th>
+                    <th className="text-right pb-3 font-medium">Shares</th>
+                    <th className="text-right pb-3 font-medium">Price</th>
+                    <th className="text-right pb-3 font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -408,6 +442,17 @@ export default function SandboxPage() {
                       <td className="py-2 text-right font-mono text-zinc-100 font-medium">
                         {formatUSD(tx.total)}
                       </td>
+                    <tr key={tx.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-2.5 text-[#7a6e60] text-xs">
+                        {new Date(tx.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      </td>
+                      <td className="py-2.5 font-mono font-black text-[#ede8df] text-sm">{tx.symbol}</td>
+                      <td className={`py-2.5 capitalize font-semibold text-xs ${tx.type === 'buy' ? 'text-[#c8a882]' : 'text-[#ff4560]'}`}>
+                        {tx.type}
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-[#ede8df] tabular-nums">{tx.shares}</td>
+                      <td className="py-2.5 text-right font-mono text-[#ede8df] tabular-nums">{formatUSD(tx.pricePerShare)}</td>
+                      <td className="py-2.5 text-right font-mono font-bold text-[#ede8df] tabular-nums">{formatUSD(tx.total)}</td>
                     </tr>
                   ))}
                 </tbody>

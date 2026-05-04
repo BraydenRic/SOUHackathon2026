@@ -43,6 +43,7 @@ interface GameState {
   recordMyResult: (userId: string, roomId: string, winnerId: string | null, coinReward: number) => Promise<void>;
 }
 
+// Module-level set prevents double-recording if the component re-renders during async work
 const recordedRooms = new Set<string>();
 
 export const useGameStore = create<GameState>((set) => ({
@@ -125,11 +126,24 @@ export const useGameStore = create<GameState>((set) => ({
     const key = `${userId}:${roomId}`;
     if (recordedRooms.has(key)) return;
     recordedRooms.add(key);
-    const outcome = winnerId === userId
+    const isWinner = winnerId === userId;
+    const isTie = winnerId === null;
+    const outcome = isWinner
       ? { gamesWon: increment(1), coins: increment(coinReward) }
-      : winnerId === null
+      : isTie
         ? { gamesTied: increment(1) }
         : { gamesLost: increment(1) };
     await updateDoc(doc(db, 'users', userId), { gamesPlayed: increment(1), ...outcome });
+    // Write audit record so Profile page can show coin history
+    if (isWinner && coinReward > 0) {
+      const txRef = doc(collection(db, 'coinTransactions'));
+      await setDoc(txRef, {
+        id: txRef.id,
+        userId,
+        amount: coinReward,
+        reason: 'Won a draft game',
+        timestamp: Date.now(),
+      });
+    }
   },
 }));

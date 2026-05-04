@@ -1,4 +1,6 @@
-"use client";
+// Animated aurora background used on the LandingPage.
+// Blobs drift in four directions (r, l, dr, ur) with fade-in/out so the
+// loop reset is invisible. Colors match the cream/teal design theme.
 import { cn } from "@/lib/utils";
 import React, { type ReactNode } from "react";
 
@@ -7,19 +9,24 @@ interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   showRadialGradient?: boolean;
 }
 
-const blobs = [
-  { color: "#7c3aed", size: "20% 35%", top: "55%", delay: "0s",   duration: "14s" },
-  { color: "#059669", size: "15% 50%", top: "25%", delay: "-3s",  duration: "17s" },
-  { color: "#0ea5e9", size: "22% 30%", top: "70%", delay: "-6s",  duration: "12s" },
-  { color: "#10b981", size: "18% 55%", top: "35%", delay: "-9s",  duration: "19s" },
-  { color: "#4f46e5", size: "20% 28%", top: "65%", delay: "-2s",  duration: "15s" },
-  { color: "#34d399", size: "25% 45%", top: "20%", delay: "-11s", duration: "11s" },
-  { color: "#7c3aed", size: "16% 52%", top: "60%", delay: "-5s",  duration: "18s" },
-  { color: "#0ea5e9", size: "22% 33%", top: "30%", delay: "-8s",  duration: "13s" },
-  { color: "#059669", size: "18% 48%", top: "75%", delay: "-1s",  duration: "16s" },
-  { color: "#4f46e5", size: "20% 38%", top: "40%", delay: "-13s", duration: "20s" },
+// dir: "r" = left→right, "l" = right→left, "dr" = diagonal down-right, "ur" = diagonal up-right
+const blobs: { color: string; w: string; h: string; top: string; left: string; dir: string; delay: string; duration: string }[] = [
+  { color: "#c8a882", w: "38%", h: "80%",  top: "25%",  left: "-40%",  dir: "r",  delay: "0s",   duration: "16s" },
+  { color: "#5a8a88", w: "30%", h: "120%", top: "-15%", left: "140%",  dir: "l",  delay: "-4s",  duration: "20s" },
+  { color: "#c8a882", w: "32%", h: "60%",  top: "55%",  left: "-35%",  dir: "dr", delay: "-7s",  duration: "14s" },
+  { color: "#5a8a88", w: "28%", h: "100%", top: "10%",  left: "140%",  dir: "l",  delay: "-11s", duration: "22s" },
+  { color: "#a07850", w: "36%", h: "90%",  top: "-10%", left: "-38%",  dir: "ur", delay: "-2s",  duration: "18s" },
+  { color: "#3d6b69", w: "24%", h: "70%",  top: "65%",  left: "-32%",  dir: "r",  delay: "-14s", duration: "13s" },
+  { color: "#c8a882", w: "30%", h: "110%", top: "5%",   left: "-36%",  dir: "dr", delay: "-6s",  duration: "21s" },
+  { color: "#5a8a88", w: "26%", h: "55%",  top: "75%",  left: "140%",  dir: "l",  delay: "-9s",  duration: "15s" },
+  { color: "#a07850", w: "34%", h: "130%", top: "-25%", left: "140%",  dir: "ur", delay: "-1s",  duration: "19s" },
+  { color: "#3d6b69", w: "28%", h: "75%",  top: "40%",  left: "-30%",  dir: "ur", delay: "-16s", duration: "24s" },
 ];
 
+/**
+ * Wraps content with an animated aurora effect — soft color blobs drifting
+ * across and diagonally behind the page content.
+ */
 export const AuroraBackground = ({
   className,
   children,
@@ -27,26 +34,24 @@ export const AuroraBackground = ({
   ...props
 }: AuroraBackgroundProps) => {
   return (
-    <main>
-      <div
-        className={cn(
-          "transition-bg relative flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-slate-100",
-          className,
-        )}
-        {...props}
-      >
-        <div className="absolute inset-0 overflow-hidden">
+    <div
+      className={cn(
+        "transition-bg relative flex flex-col bg-[#0a0908] text-[#ede8df]",
+        className,
+      )}
+      {...props}
+    >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {blobs.map((blob, i) => (
             <div
               key={i}
-              className="animate-aurora-blob pointer-events-none absolute blur-[40px] opacity-60 will-change-transform"
+              className={`animate-aurora-${blob.dir} pointer-events-none absolute blur-[90px] will-change-transform`}
               style={{
-                width: "40%",
-                height: blob.size.split(" ")[1],
+                width: blob.w,
+                height: blob.h,
                 top: blob.top,
-                left: "-40%",
-                transform: "translateY(-50%)",
-                background: `radial-gradient(ellipse ${blob.size}, ${blob.color} 0%, transparent 100%)`,
+                left: blob.left,
+                background: `radial-gradient(ellipse 100% 100%, ${blob.color} 0%, transparent 100%)`,
                 animationDuration: blob.duration,
                 animationDelay: blob.delay,
               }}
@@ -55,6 +60,5 @@ export const AuroraBackground = ({
         </div>
         {children}
       </div>
-    </main>
   );
 };

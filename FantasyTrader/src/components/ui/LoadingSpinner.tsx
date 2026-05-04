@@ -1,28 +1,35 @@
-// Inline or full-screen animated spinner
+// Animated spinner used for page loads and button loading states
 
 interface LoadingSpinnerProps {
   fullScreen?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
-const sizeClasses = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-10 w-10' };
+const sizeClasses = { sm: 'h-3.5 w-3.5', md: 'h-5 w-5', lg: 'h-8 w-8' };
 
-/** Animated loading spinner. Use fullScreen to center in viewport, otherwise renders inline. */
+/**
+ * Animated SVG spinner. When `fullScreen` is true, renders as a fixed overlay
+ * covering the entire viewport — used for page-level loading states.
+ */
 export function LoadingSpinner({ fullScreen = false, size = 'md' }: LoadingSpinnerProps) {
   const spinner = (
-    <svg
-      className={`${sizeClasses[size]} animate-spin text-emerald-400`}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    <svg className={`${sizeClasses[size]} animate-spin`} fill="none" viewBox="0 0 24 24">
+      <circle
+        className="opacity-20"
+        cx="12" cy="12" r="10"
+        stroke="#c8a882" strokeWidth="3"
+      />
+      <path
+        className="opacity-80"
+        fill="#c8a882"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+      />
     </svg>
   );
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-zinc-950/80 z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0a0908]/90 z-50">
         {spinner}
       </div>
     );

@@ -11,7 +11,7 @@ Built for **SOU Hackathon 2026**.
 Fantasy Trader is a gamified stock trading web app with two modes:
 
 - **Sandbox** — Solo practice mode. Start with $10,000 in fake cash, buy and sell from a pool of 50 real stocks, and watch your portfolio grow using live market prices. No risk, all the fun.
-- **Draft** — Competitive 1v1 mode. Two players snake-draft stocks from the same pool and compete over a chosen time window (1 hour, 1 day, or 1 week). The player with the highest percentage portfolio gain wins coins. Use coins on power-ups.
+- **Draft** — Competitive 1v1 mode. Two players snake-draft stocks from the same pool and compete over a chosen time window (1 hour, 1 day, or 1 week). The player with the highest percentage portfolio gain wins ◈ coins, which can be spent on profile titles.
 
 ---
 
@@ -21,8 +21,8 @@ Fantasy Trader is a gamified stock trading web app with two modes:
 - Sandbox trading with live Finnhub price data and portfolio history
 - 1v1 Draft rooms with snake-draft pick order
 - Configurable match durations: 1 min (test), 1 hour, 1 day, 1 week
-- Win tracking and coin rewards
-- Power-ups: **Insider Tip** (reveal the best-performing stock), **Freeze** (block a stock from your opponent), **Power Pick** (add an extra stock to your draft)
+- Win tracking and coin rewards — winners earn ◈ coins
+- Spend coins on profile titles to show off your rank
 - Real-time price updates: Finnhub → Firestore → client
 - **Match history** — review completed games with your gain % vs opponent's, result badge, and stocks you drafted
 - **Leaderboard** — global rankings by wins, showing win rate and coin balance (top 50 players)
@@ -109,6 +109,17 @@ The service polls Finnhub every 60 seconds and writes prices to Firestore. The f
 
 ---
 
+## Design
+
+- Dark premium theme — warm charcoal (`#0a0908`) background with a cream/gold (`#c8a882`) primary accent and dusty teal (`#5a8a88`) secondary
+- Typography: [Syne Variable](https://fonts.google.com/specimen/Syne) for headings, [Geist Variable](https://vercel.com/font) for body, Geist Mono for numbers and labels
+- Animated aurora background on the landing page — soft color blobs drifting in multiple directions
+- Responsive across all screen sizes; mobile nav uses a full-screen hamburger drawer
+- Custom SVG favicon matching the navbar logo
+- Deployed on Firebase Hosting for native Google Sign-In support
+
+---
+
 ## How to Play
 
 1. **Sign in** with your Google account
@@ -116,11 +127,15 @@ The service polls Finnhub every 60 seconds and writes prices to Firestore. The f
 3. **Create a room** from the Lobby and share the room code with a friend
 4. **Draft** — take turns picking stocks snake-draft style
 5. **Wait** for the match duration to end
-6. **Check results** — highest percentage gain wins; the winner earns coins
-7. **Spend coins** on power-ups for your next match
+6. **Check results** — highest percentage gain wins; the winner earns ◈ coins
+7. **Spend coins** on profile titles from the Profile page
 
 ---
 
 ## Team
 
-Built at SOU Hackathon 2026.
+Built at SOU Hackathon 2026 by:
+
+- **Brayden Stach**
+- **Katherine Nunn**
+- **Alec Clark**
